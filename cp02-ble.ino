@@ -9,11 +9,10 @@
  */
 
 #include <Arduino.h>
-#include "BLEDevice.h"
-#include "BLEServer.h"
-#include "BLEUtils.h"
-#include "BLE2902.h"
-#include "BLEAdvertising.h"
+#include <BLEDevice.h>
+#include <BLEService.h>
+#include <BLECharacteristic.h>
+#include <BLEAdvertising.h>
 
 // ============================================
 // 配置区域 - 根据目标设备抓取的参数配置
@@ -52,7 +51,7 @@ const uint8_t MANUFACTURER_DATA[] = {
 // 全局变量
 // ============================================
 
-BLEServer *pServer = nullptr;
+BLEService *pService = nullptr;
 BLECharacteristic *pCharNotify = nullptr; // Notify/Read 特征值
 BLECharacteristic *pCharWrite = nullptr;  // Write 特征值
 bool deviceConnected = false;
@@ -196,13 +195,13 @@ void setup()
 
   // 创建BLE服务器
   Serial.println("正在创建BLE服务器...");
-  pServer = BLEDevice::createServer();
+  BLEServer *pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
   Serial.println("BLE服务器创建完成");
 
   // 创建BLE服务
   Serial.println("正在创建BLE服务...");
-  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pService = pServer->createService(SERVICE_UUID);
   Serial.print("服务UUID: ");
   Serial.println(SERVICE_UUID);
 
@@ -217,7 +216,8 @@ void setup()
   Serial.println("特征值 1 属性: READ | NOTIFY");
 
   // 添加描述符 (必需，用于通知订阅)
-  pCharNotify->addDescriptor(new BLE2902());
+  BLEDescriptor *pDescriptorNotify = new BLEDescriptor(BLEUUID((uint16_t)0x2902));
+  pCharNotify->addDescriptor(pDescriptorNotify);
 
   // 设置回调 (用于检测订阅事件)
   pCharNotify->setCallbacks(new MyNotifyCallbacks());
