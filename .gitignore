@@ -1,0 +1,25 @@
+# Arduino IDE
+*.userprefs
+*.user
+
+# Build artifacts
+*.o
+*.a
+*.elf
+*.hex
+*.bin
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
