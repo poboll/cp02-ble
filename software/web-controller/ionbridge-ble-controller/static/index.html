@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IonBridge BLE 控制器</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👾</text></svg>">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-bolt"></i>
+                    <h1>IonBridge</h1>
+                </div>
+                <p class="subtitle">小电拼蓝牙控制系统</p>
+            </div>
+        </header>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">设备</span>
+                    <span id="device-name" class="status-value">未连接</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">连接状态</span>
+                    <span id="connection-status" class="status-value disconnected">未连接</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">Token</span>
+                    <span id="token-value" class="status-value">无</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-sync"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">自动刷新</span>
+                    <span id="auto-refresh" class="status-value">启用</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-redo"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">自动重连</span>
+                    <span id="auto-reconnect" class="status-value">启用</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="status-info">
+                    <span class="status-label">运行时间</span>
+                    <span id="uptime" class="status-value">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Device Management -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h2>设备管理</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="scanDevices()">
+                        <i class="fas fa-search"></i>
+                        <span>扫描设备</span>
+                    </button>
+                    <button class="btn btn-success" onclick="showConnectDialog()">
+                        <i class="fas fa-plug"></i>
+                        <span>连接设备</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="disconnect()">
+                        <i class="fas fa-unlink"></i>
+                        <span>断开连接</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getDeviceInfo()">
+                        <i class="fas fa-info-circle"></i>
+                        <span>设备信息</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="getPowerSupplyStatus()">
+                        <i class="fas fa-bolt"></i>
+                        <span>电源状态</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getDeviceModel()">
+                        <i class="fas fa-tag"></i>
+                        <span>设备型号</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getDeviceSerial()">
+                        <i class="fas fa-barcode"></i>
+                        <span>序列号</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getDeviceUptime()">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>运行时间</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getApVersion()">
+                        <i class="fas fa-code-branch"></i>
+                        <span>固件版本</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getBleAddr()">
+                        <i class="fas fa-broadcast-tower"></i>
+                        <span>BLE地址</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="rebootDevice()">
+                        <i class="fas fa-redo"></i>
+                        <span>重启设备</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="resetDevice()">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>重置设备</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Port Control -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-plug"></i>
+                    <h2>端口控制</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="getPortStatus()">
+                        <i class="fas fa-chart-line"></i>
+                        <span>端口状态</span>
+                    </button>
+                    <button class="btn btn-success" onclick="showPortPowerDialog()">
+                        <i class="fas fa-power-off"></i>
+                        <span>端口电源</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showPortConfigDialog()">
+                        <i class="fas fa-cog"></i>
+                        <span>端口配置</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showPortPriorityDialog()">
+                        <i class="fas fa-sort-numeric-down"></i>
+                        <span>端口优先级</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showProtocolDialog()">
+                        <i class="fas fa-list"></i>
+                        <span>协议管理</span>
+                    </button>
+                </div>
+                <div id="port-status" class="hidden">
+                    <h3>端口状态</h3>
+                    <div id="ports-container"></div>
+                </div>
+            </section>
+
+            <!-- Power Management -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-bolt"></i>
+                    <h2>电源管理</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="getPowerStatistics()">
+                        <i class="fas fa-chart-area"></i>
+                        <span>电源统计</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getChargingStrategy()">
+                        <i class="fas fa-tasks"></i>
+                        <span>充电策略</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showChargingStrategyDialog()">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>设置策略</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getChargingStatus()">
+                        <i class="fas fa-charging-station"></i>
+                        <span>充电状态</span>
+                    </button>
+                    <button class="btn btn-success" onclick="showCompatibilityModesDialog()">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>协议兼容模式</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showCompatibilitySettingsDialog()">
+                        <i class="fas fa-cog"></i>
+                        <span>协议兼容设置</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- WiFi Management -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-wifi"></i>
+                    <h2>WiFi 管理</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="getWifiStatus()">
+                        <i class="fas fa-signal"></i>
+                        <span>WiFi 状态</span>
+                    </button>
+                    <button class="btn btn-info" onclick="scanWifi()">
+                        <i class="fas fa-search-location"></i>
+                        <span>扫描 WiFi</span>
+                    </button>
+                    <button class="btn btn-success" onclick="showWifiDialog()">
+                        <i class="fas fa-wifi"></i>
+                        <span>设置 WiFi</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Display Management -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-desktop"></i>
+                    <h2>显示管理</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="getDisplaySettings()">
+                        <i class="fas fa-tv"></i>
+                        <span>显示设置</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showBrightnessDialog()">
+                        <i class="fas fa-sun"></i>
+                        <span>设置亮度</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showDisplayModeDialog()">
+                        <i class="fas fa-th-large"></i>
+                        <span>设置模式</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="flipDisplay()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>翻转显示</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- System Control -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-cogs"></i>
+                    <h2>系统控制</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="refreshToken()">
+                        <i class="fas fa-sync"></i>
+                        <span>刷新 Token</span>
+                    </button>
+                    <button class="btn btn-info" onclick="toggleAutoRefresh()">
+                        <i class="fas fa-clock"></i>
+                        <span>自动刷新</span>
+                    </button>
+                    <button class="btn btn-info" onclick="toggleAutoReconnect()">
+                        <i class="fas fa-redo"></i>
+                        <span>自动重连</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getSystemInfo()">
+                        <i class="fas fa-info"></i>
+                        <span>系统信息</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showTokenManagement()">
+                        <i class="fas fa-key"></i>
+                        <span>Token 管理</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Advanced Settings -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>高级设置</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-warning" onclick="showNightModeDialog()">
+                        <i class="fas fa-moon"></i>
+                        <span>夜间模式</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getNightMode()">
+                        <i class="fas fa-eye"></i>
+                        <span>查看夜间模式</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showLanguageDialog()">
+                        <i class="fas fa-globe"></i>
+                        <span>语言设置</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getLanguage()">
+                        <i class="fas fa-language"></i>
+                        <span>查看语言</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showLedModeDialog()">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>LED模式</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getLedMode()">
+                        <i class="fas fa-eye"></i>
+                        <span>查看LED模式</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showAutoOffDialog()">
+                        <i class="fas fa-power-off"></i>
+                        <span>自动关闭</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getAutoOff()">
+                        <i class="fas fa-clock"></i>
+                        <span>查看自动关闭</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showScreenSaverDialog()">
+                        <i class="fas fa-desktop"></i>
+                        <span>屏保设置</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getScreenSaver()">
+                        <i class="fas fa-eye"></i>
+                        <span>查看屏保</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Advanced Functions -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-cogs"></i>
+                    <h2>高级功能</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="showPortPDStatusDialog()">
+                        <i class="fas fa-plug"></i>
+                        <span>充电线信息</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showPowerCurveDialog()">
+                        <i class="fas fa-chart-line"></i>
+                        <span>功率曲线</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showChargingSessionDialog()">
+                        <i class="fas fa-history"></i>
+                        <span>充电会话</span>
+                    </button>
+                    <button class="btn btn-success" onclick="showTemperatureModeDialog()">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>温度模式</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Version Info -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-code-branch"></i>
+                    <h2>版本信息</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-secondary" onclick="getDeviceInfo()">
+                        <i class="fas fa-microchip"></i>
+                        <span>设备信息</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getBpVersion()">
+                        <i class="fas fa-memory"></i>
+                        <span>BP版本</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getFpgaVersion()">
+                        <i class="fas fa-microchip"></i>
+                        <span>FPGA版本</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getZrlibVersion()">
+                        <i class="fas fa-code"></i>
+                        <span>ZRLIB版本</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Debug & Test -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-bug"></i>
+                    <h2>调试测试</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-secondary" onclick="showEchoTestDialog()">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>BLE回显测试</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getDebugLog()">
+                        <i class="fas fa-file-alt"></i>
+                        <span>调试日志</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="pingMqtt()">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span>MQTT测试</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="showPingHttpDialog()">
+                        <i class="fas fa-globe"></i>
+                        <span>HTTP测试</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- OTA Update -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    <h2>固件更新</h2>
+                </div>
+                <div class="button-grid">
+                    <button class="btn btn-danger" onclick="showOtaDialog()">
+                        <i class="fas fa-upload"></i>
+                        <span>WiFi OTA</span>
+                    </button>
+                    <button class="btn btn-info" onclick="getOtaProgress()">
+                        <i class="fas fa-tasks"></i>
+                        <span>OTA进度</span>
+                    </button>
+                    <button class="btn btn-success" onclick="confirmOta()">
+                        <i class="fas fa-check"></i>
+                        <span>确认OTA</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Log -->
+            <section class="section">
+                <div class="section-header">
+                    <i class="fas fa-terminal"></i>
+                    <h2>日志</h2>
+                    <button class="btn btn-small btn-secondary" onclick="clearLog()">
+                        <i class="fas fa-trash"></i>
+                        <span>清空</span>
+                    </button>
+                </div>
+                <div id="log" class="log"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div id="dialog-overlay" class="dialog-overlay hidden">
+        <div class="dialog">
+            <div class="dialog-header">
+                <h3 id="dialog-title">对话框</h3>
+                <button class="dialog-close" onclick="closeDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="dialog-content" class="dialog-content"></div>
+            <div class="dialog-footer">
+                <button class="btn btn-secondary" onclick="closeDialog()">取消</button>
+                <button class="btn btn-primary" id="dialog-confirm" onclick="confirmDialog()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token Management Dialog -->
+    <div id="token-management-dialog" class="dialog-overlay hidden">
+        <div class="dialog">
+            <div class="dialog-header">
+                <h3>Token 管理</h3>
+                <button class="dialog-close" onclick="closeTokenManagementDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dialog-body">
+                <div class="token-section">
+                    <h4>当前 Token</h4>
+                    <div class="token-display">
+                        <span id="current-token-display">未连接</span>
+                    </div>
+                </div>
+                <div class="token-section">
+                    <h4>手动设置 Token</h4>
+                    <div class="form-group">
+                        <label>Token 值 (0-255):</label>
+                        <div class="input-group">
+                            <input type="number" id="manual-token-input" class="form-control" min="0" max="255"
+                                placeholder="输入 Token 值">
+                            <button class="btn btn-primary" onclick="setManualToken()">设置</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="token-section">
+                    <h4>暴力破解 Token</h4>
+                    <p class="info-text">暴力破解会尝试所有可能的 Token 值 (0-255)，可能需要较长时间。</p>
+                    <button class="btn btn-warning" onclick="bruteforceToken()">
+                        <i class="fas fa-search"></i>
+                        开始暴力破解
+                    </button>
+                </div>
+                <div class="token-section">
+                    <h4>已存储的 Token</h4>
+                    <button class="btn btn-info" onclick="loadStoredTokens()">
+                        <i class="fas fa-database"></i>
+                        查看已存储的 Token
+                    </button>
+                    <div id="stored-tokens-list" class="stored-tokens-list">
+                        <!-- Stored tokens will be displayed here -->
+                    </div>
+                </div>
+                <div class="token-section">
+                    <h4>从存储加载 Token</h4>
+                    <div class="form-group">
+                        <label>设备地址:</label>
+                        <div class="input-group">
+                            <input type="text" id="load-token-address" class="form-control" placeholder="设备 MAC 地址">
+                            <button class="btn btn-success" onclick="loadTokenFromStorage()">加载</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="token-section">
+                    <h4>清除 Token 存储</h4>
+                    <p class="warning-text">此操作将清除所有已存储的 Token。</p>
+                    <button class="btn btn-danger" onclick="clearTokenStorage()">
+                        <i class="fas fa-trash"></i>
+                        清除所有 Token
+                    </button>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn btn-secondary" onclick="closeTokenManagementDialog()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

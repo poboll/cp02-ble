@@ -1,25 +1,138 @@
-# Arduino IDE
-*.userprefs
-*.user
+# ============================================
+# CP02-BLE Project - Git Ignore Configuration
+# ============================================
 
-# Build artifacts
-*.o
-*.a
-*.elf
-*.hex
-*.bin
-*.zip
-
-# OS files
+# ============================================
+# System Files
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# IDE
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ============================================
+# Virtual Environments
+# ============================================
+venv/
+env/
+ENV/
+.venv
+
+# ============================================
+# IDEs
+# ============================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Logs
+# ============================================
+# Arduino
+# ============================================
+*.tmp
 *.log
+*.bak
+*.pde
+
+# ============================================
+# ESP-IDF
+# ============================================
+build/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+idf_component.yml.bak
+
+# ============================================
+# Sensitive Information
+# ============================================
+# Token storage files
+**/token_storage.json
+# Configuration files with credentials
+*.env
+.env.local
+.env.*.local
+# WiFi credentials
+wifi_credentials.txt
+secrets.json
+config.json
+
+# ============================================
+# Git Submodules
+# ============================================
+# Submodules are managed by git, not tracked directly
+hardware/esp32/IonBridge-main/
+
+# ============================================
+# Documentation Archive
+# ============================================
+# Archive folder contains intermediate documents and chat logs
+docs/archive/
+
+# ============================================
+# Kilo Code
+# ============================================
+.kiro/
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+*.out
+
+# ============================================
+# Temporary Files
+# ============================================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ============================================
+# OS Files
+# ============================================
+*.swp
+*.swo
+*~

@@ -1,0 +1,3 @@
+[submodule "hardware/esp32/IonBridge-main"]
+	path = hardware/esp32/IonBridge-main
+	url = https://github.com/ifanrx/IonBridge.git
