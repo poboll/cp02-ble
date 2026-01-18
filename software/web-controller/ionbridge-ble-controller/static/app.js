@@ -6,6 +6,7 @@ let ws = null;
 let reconnectInterval = null;
 let selectedDevice = null;
 let currentDialogAction = null;
+let lastPortSelectValue = null; // 记录上一次的端口选择器值
 
 // Auto-refresh timers
 let portStatusRefreshTimer = null;
@@ -219,6 +220,9 @@ function handleResponse(action, data) {
             break;
         case 'get_wifi_status':
             handleWifiStatus(data.data);
+            break;
+        case 'scan_wifi':
+            handleWifiScanResult(data.data);
             break;
         case 'get_display_settings':
             handleDisplaySettings(data.data);
@@ -474,18 +478,28 @@ function handleDeviceInfo(data) {
             'model': '型号',
             'firmware': '固件版本',
             'serial': '序列号',
-            'uptime': '运行时间 (秒)',
+            'uptime': '运行时间',
+            'uptime_formatted': '运行时间',
             'ble_addr': 'BLE 地址'
         }[key] || key;
 
         let displayValue = value;
         if (key === 'uptime') {
+            // 如果后端没有返回uptime_formatted，则在前端格式化
             const hours = Math.floor(value / 3600);
             const minutes = Math.floor((value % 3600) / 60);
             const seconds = value % 60;
             displayValue = `${hours}h ${minutes}m ${seconds}s`;
+        } else if (key === 'uptime_formatted') {
+            // 使用后端格式化的运行时间
+            displayValue = value;
         } else if (key === 'ble_addr') {
             displayValue = value.toUpperCase().match(/.{1,2}/g).join(':');
+        }
+
+        // 跳过原始uptime字段（因为已经有uptime_formatted）
+        if (key === 'uptime' && data.uptime_formatted) {
+            continue;
         }
 
         content += `
@@ -699,6 +713,9 @@ function handlePortStatus(data) {
         return;
     }
 
+    // 保存端口状态数据到全局变量，供其他函数使用
+    window.portStatusData = data;
+
     // Add refresh button if not exists
     let refreshBtn = document.getElementById('port-status-refresh-btn');
     if (!refreshBtn) {
@@ -713,28 +730,53 @@ function handlePortStatus(data) {
         // Convert protocol number to name using FAST_CHARGING_PROTOCOLS
         let protocolName = getProtocolName(port.protocol);
 
+        // 根据功率选择图标
+        let powerIcon = 'fa-bolt';
+        let powerColor = '#666';
+        if (port.power > 0) {
+            if (port.power < 10) {
+                powerIcon = 'fa-bolt';
+                powerColor = '#4CAF50'; // 绿色 - 低功率
+            } else if (port.power < 30) {
+                powerIcon = 'fa-bolt';
+                powerColor = '#FF9800'; // 橙色 - 中功率
+            } else if (port.power < 60) {
+                powerIcon = 'fa-bolt';
+                powerColor = '#FF5722'; // 红色 - 高功率
+            } else {
+                powerIcon = 'fa-bolt';
+                powerColor = '#F44336'; // 深红色 - 超高功率
+            }
+        }
+
         const card = document.createElement('div');
         card.className = `port-card ${port.charging ? 'active' : 'inactive'}`;
         card.innerHTML = `
             <div class="port-header">
-                <div class="port-title">端口 ${port.port_id + 1}</div>
-                <span class="port-status ${port.charging ? 'on' : 'off'}">${port.charging ? '充电中' : '未充电'}</span>
+                <div class="port-title">
+                    <i class="fas ${powerIcon}" style="color: ${powerColor}; margin-right: 8px;"></i>
+                    端口 ${port.port_id + 1}
+                </div>
+                <span class="port-status ${port.charging ? 'on' : 'off'}">
+                    <i class="fas ${port.charging ? 'fa-plug' : 'fa-power-off'}"></i>
+                    ${port.charging ? '充电中' : '未充电'}
+                </span>
             </div>
             <div class="port-info">
                 <div class="port-info-item">
-                    <span class="port-info-label">电压</span>
-                    <span class="port-info-value">${port.voltage.toFixed(2)} V</span>
+                    <span class="port-info-label"><i class="fas fa-bolt"></i> 电压</span>
+                    <span class="port-info-value" style="color: ${port.voltage > 0 ? '#4CAF50' : '#666'};">${port.voltage.toFixed(2)} V</span>
                 </div>
                 <div class="port-info-item">
-                    <span class="port-info-label">电流</span>
-                    <span class="port-info-value">${port.current.toFixed(2)} A</span>
+                    <span class="port-info-label"><i class="fas fa-tachometer-alt"></i> 电流</span>
+                    <span class="port-info-value" style="color: ${port.current > 0 ? '#2196F3' : '#666'};">${port.current.toFixed(2)} A</span>
                 </div>
                 <div class="port-info-item">
-                    <span class="port-info-label">功率</span>
-                    <span class="port-info-value">${port.power.toFixed(2)} W</span>
+                    <span class="port-info-label"><i class="fas fa-fire"></i> 功率</span>
+                    <span class="port-info-value" style="color: ${powerColor}; font-weight: bold;">${port.power.toFixed(2)} W</span>
                 </div>
                 <div class="port-info-item">
-                    <span class="port-info-label">协议</span>
+                    <span class="port-info-label"><i class="fas fa-microchip"></i> 协议</span>
                     <span class="port-info-value">${protocolName}</span>
                 </div>
             </div>
@@ -743,14 +785,17 @@ function handlePortStatus(data) {
     });
 
     portStatusDiv.classList.remove('hidden');
+
+    // 更新功率曲线（如果功率曲线对话框打开且选择"全部端口"）
+    handlePowerStatisticsForCurve(data);
 }
 
 function showPortPowerDialog() {
     const content = `
         <div class="form-group">
             <label>端口掩码</label>
-            <input type="text" id="port-mask" placeholder="例如: 1, 2, 3, 4 或 15 (0x0F)" value="1">
-            <small>可以使用逗号分隔的端口号 (1,2,3,4) 或十六进制掩码 (15)</small>
+            <input type="text" id="port-mask" placeholder="例如: 1, 2, 3, 4, 5 或 31 (0x1F)" value="1">
+            <small>可以使用逗号分隔的端口号 (1,2,3,4,5) 或十六进制掩码 (31)</small>
         </div>
         <div class="form-group">
             <label>操作</label>
@@ -802,6 +847,7 @@ function showPortConfigDialog() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
     `;
@@ -879,7 +925,7 @@ function showPortPriorityDialog() {
 }
 
 function handlePortPriority(data) {
-    const priorities = data?.priorities || [0, 1, 2, 3];
+    const priorities = data?.priorities || [0, 1, 2, 3, 4];
     const content = `
         <p style="margin-bottom:15px;color:#888;">拖动端口卡片来调整优先级顺序（上方优先级更高）</p>
         <div id="priority-list" style="display:flex;flex-direction:column;gap:8px;">
@@ -954,6 +1000,7 @@ function showProtocolDialog() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
         <div class="form-group">
@@ -998,6 +1045,7 @@ function getPowerStatistics() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
     `;
@@ -1012,6 +1060,11 @@ function getPowerStats() {
 }
 
 function handlePowerStatistics(data) {
+    // 检查是否需要更新全端口功率曲线
+    if (handlePowerStatisticsForCurve(data)) {
+        return;
+    }
+
     let content = '<div class="info-display">';
 
     if (data.voltage !== undefined) {
@@ -1175,6 +1228,51 @@ function scanWifi() {
     sendAction('scan_wifi');
 }
 
+function handleWifiScanResult(data) {
+    const networks = data.networks || [];
+    let content = '<div class="info-display">';
+
+    if (networks.length === 0) {
+        content += '<p style="color:#888;">未发现 WiFi 网络</p>';
+    } else {
+        content += `<p style="margin-bottom:10px;">发现 ${networks.length} 个网络:</p>`;
+        content += '<div style="max-height:300px;overflow-y:auto;">';
+        networks.forEach(net => {
+            const signalStrength = net.rssi > -50 ? '强' : (net.rssi > -70 ? '中' : '弱');
+            const signalColor = net.rssi > -50 ? '#4CAF50' : (net.rssi > -70 ? '#FF9800' : '#f44336');
+            const authType = net.auth === 0 ? '开放' : '加密';
+            const storedIcon = net.stored ? ' <span style="color:#4CAF50;">★</span>' : '';
+            content += `
+                <div style="padding:8px;margin:4px 0;background:var(--card-bg);border:1px solid var(--border-color);border-radius:6px;cursor:pointer;" onclick="selectWifiNetwork('${net.ssid.replace(/'/g, "\\'")}')">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-weight:500;">${net.ssid}${storedIcon}</span>
+                        <span style="color:${signalColor};font-size:0.85em;">${signalStrength} (${net.rssi}dBm)</span>
+                    </div>
+                    <div style="font-size:0.8em;color:#888;margin-top:4px;">${authType}</div>
+                </div>
+            `;
+        });
+        content += '</div>';
+    }
+    content += '</div>';
+    showDialog('WiFi 扫描结果', content, null);
+}
+
+function selectWifiNetwork(ssid) {
+    closeDialog();
+    const content = `
+        <div class="form-group">
+            <label>WiFi SSID</label>
+            <input type="text" id="wifi-ssid" value="${ssid}" readonly>
+        </div>
+        <div class="form-group">
+            <label>WiFi 密码</label>
+            <input type="password" id="wifi-password" placeholder="输入 WiFi 密码">
+        </div>
+    `;
+    showDialog('连接 WiFi', content, 'setWifi');
+}
+
 function showWifiDialog() {
     const content = `
         <div class="form-group">
@@ -1247,10 +1345,33 @@ function handleDisplaySettings(data) {
 function showBrightnessDialog() {
     const content = `
         <div class="form-group">
-            <label>亮度 (0-100)</label>
-            <input type="range" id="display-brightness" min="0" max="100" value="100">
-            <div class="text-center" style="margin-top: 10px;">
-                <span id="brightness-value">100%</span>
+            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <i class="fas fa-sun" style="color: #FFD700; font-size: 1.2em;"></i>
+                <span style="font-weight: 500;">屏幕亮度</span>
+                <i class="fas fa-lightbulb" style="color: #FFA500; font-size: 1.2em;"></i>
+            </label>
+            <div style="position: relative; margin-bottom: 10px;">
+                <input type="range" id="display-brightness" min="0" max="100" value="100"
+                    style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #333, #4CAF50); outline: none; -webkit-appearance: none;">
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85em; color: #888;">
+                    <span><i class="fas fa-moon"></i> 0%</span>
+                    <span id="brightness-value" style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">100%</span>
+                    <span><i class="fas fa-sun"></i> 100%</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" class="btn btn-small btn-secondary" onclick="setPresetBrightness(0)">
+                    <i class="fas fa-moon"></i> 夜间
+                </button>
+                <button type="button" class="btn btn-small btn-secondary" onclick="setPresetBrightness(30)">
+                    <i class="fas fa-cloud-moon"></i> 暗光
+                </button>
+                <button type="button" class="btn btn-small btn-secondary" onclick="setPresetBrightness(60)">
+                    <i class="fas fa-cloud-sun"></i> 中等
+                </button>
+                <button type="button" class="btn btn-small btn-secondary" onclick="setPresetBrightness(100)">
+                    <i class="fas fa-sun"></i> 明亮
+                </button>
             </div>
         </div>
     `;
@@ -1260,9 +1381,37 @@ function showBrightnessDialog() {
     // Update brightness value display
     const slider = document.getElementById('display-brightness');
     const valueDisplay = document.getElementById('brightness-value');
+
+    // Update brightness value and color
     slider.addEventListener('input', () => {
-        valueDisplay.textContent = `${slider.value}%`;
+        const value = parseInt(slider.value);
+        valueDisplay.textContent = `${value}%`;
+
+        // Update color based on brightness
+        let color = '#666';
+        if (value <= 30) {
+            color = '#2196F3'; // 蓝色 - 夜间
+        } else if (value <= 60) {
+            color = '#FF9800'; // 橙色 - 中等
+        } else {
+            color = '#4CAF50'; // 绿色 - 明亮
+        }
+        valueDisplay.style.color = color;
+
+        // Update slider gradient
+        const percentage = value;
+        slider.style.background = `linear-gradient(to right, #4CAF50 ${percentage}%, #333 ${percentage}%)`;
     });
+}
+
+function setPresetBrightness(value) {
+    const slider = document.getElementById('display-brightness');
+    const valueDisplay = document.getElementById('brightness-value');
+    if (slider) {
+        slider.value = value;
+        // Trigger input event to update display
+        slider.dispatchEvent(new Event('input'));
+    }
 }
 
 function setBrightness() {
@@ -1585,6 +1734,7 @@ function showPortMaxPowerDialog() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
         <div class="form-group">
@@ -1619,6 +1769,7 @@ function showGetPortMaxPowerDialog() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
     `;
@@ -1657,6 +1808,7 @@ function showGetPortTemperatureDialog() {
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
     `;
@@ -1671,6 +1823,11 @@ function getPortTemperature() {
 }
 
 function handlePortTemperature(data) {
+    // 先尝试更新温度曲线
+    if (handlePortTemperatureForCurve(data)) {
+        return; // 温度曲线对话框打开时，不显示弹窗
+    }
+
     let content = '<div class="info-display">';
     content += `
         <div class="info-item">
@@ -1829,7 +1986,7 @@ function showPortPDStatusDialog() {
     // Show expanded view for all 4 ports
     addLog('正在获取所有端口充电线信息...', 'info');
     cableInfoData = {};
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         sendAction('get_port_pd_status', { port_id: i });
     }
 
@@ -1858,7 +2015,7 @@ function toggleCableInfoAutoRefresh() {
         addLog('充电线信息自动刷新已关闭', 'info');
     } else {
         cableInfoRefreshTimer = setInterval(() => {
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 5; i++) {
                 sendAction('get_port_pd_status', { port_id: i });
             }
         }, REFRESH_INTERVAL);
@@ -1882,16 +2039,12 @@ function handlePortPDStatus(data) {
 
     // If container exists, update expanded view
     if (container) {
-        // Store data by port (infer port from raw data or use index)
-        const portIdx = Object.keys(cableInfoData).length;
-        if (portIdx < 4) {
-            cableInfoData[portIdx] = pd;
-        }
+        // Use port_id from response data
+        const portIdx = pd.port_id !== undefined ? pd.port_id : Object.keys(cableInfoData).length;
+        cableInfoData[portIdx] = pd;
 
-        // Render all ports
-        if (Object.keys(cableInfoData).length >= 4 || !container.innerHTML.includes('正在加载')) {
-            renderCableInfoExpanded();
-        }
+        // Render when we have data (don't wait for all 4)
+        renderCableInfoExpanded();
         return;
     }
 
@@ -2031,25 +2184,65 @@ function renderCableInfoExpanded() {
     if (!container) return;
 
     let html = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         const pd = cableInfoData[i] || {};
         const hasData = pd.operating || pd.cable || pd.battery;
+
+        // Calculate battery percentage and remaining time
+        let batteryInfo = '';
+        if (pd.battery && pd.battery.last_full_capacity > 0) {
+            const percent = Math.min(100, Math.round((pd.battery.present_capacity / pd.battery.last_full_capacity) * 100));
+            batteryInfo += `<div><span style="color:#888;">电量:</span> ${percent}%</div>`;
+
+            // Estimate remaining time if charging
+            if (pd.operating && pd.operating.power > 0 && percent < 100) {
+                const remaining = pd.battery.last_full_capacity - pd.battery.present_capacity;
+                const hours = remaining / pd.operating.power;
+                if (hours < 1) {
+                    batteryInfo += `<div><span style="color:#888;">预计充满:</span> ${Math.round(hours * 60)} 分钟</div>`;
+                } else {
+                    batteryInfo += `<div><span style="color:#888;">预计充满:</span> ${hours.toFixed(1)} 小时</div>`;
+                }
+            }
+        }
+
+        // Build cable info HTML
+        let cableInfoHtml = '';
+        if (pd.cable) {
+            cableInfoHtml = `
+                <div><span style="color:#888;">线缆VID:</span> ${pd.cable.vid || '-'}</div>
+                <div><span style="color:#888;">线缆PID:</span> ${pd.cable.pid || '-'}</div>
+                <div><span style="color:#888;">物理类型:</span> ${pd.cable.phy_type || '-'}</div>
+                <div><span style="color:#888;">线缆长度:</span> ${pd.cable.length || '-'}</div>
+                <div><span style="color:#888;">最大电压:</span> ${pd.cable.max_voltage || '-'}</div>
+                <div><span style="color:#888;">最大电流:</span> ${pd.cable.max_current || '-'}</div>
+                <div><span style="color:#888;">USB速度:</span> ${pd.cable.usb_speed || '-'}</div>
+            `;
+        }
+
+        // 使用portStatusData来获取准确的电压/电流/功率数据
+        // 因为get_port_pd_status的operating数据可能不准确
+        let voltage = 0, current = 0, power = 0;
+        if (window.portStatusData && window.portStatusData.ports) {
+            const portData = window.portStatusData.ports.find(p => p.port_id === i);
+            if (portData) {
+                voltage = portData.voltage || 0;
+                current = portData.current || 0;
+                power = portData.power || 0;
+            }
+        }
 
         html += `
             <div style="margin-bottom:15px;padding:12px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;">
                 <h4 style="margin:0 0 10px 0;color:var(--primary-color);">端口 ${i + 1}</h4>
                 ${hasData ? `
                     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:0.9em;">
-                        ${pd.operating ? `
-                            <div><span style="color:#888;">电压:</span> ${pd.operating.voltage || 0} V</div>
-                            <div><span style="color:#888;">电流:</span> ${pd.operating.current || 0} A</div>
-                            <div><span style="color:#888;">功率:</span> ${pd.operating.power || 0} W</div>
-                            <div><span style="color:#888;">PD版本:</span> ${pd.operating.pd_revision || '-'}</div>
-                        ` : ''}
-                        ${pd.cable ? `
-                            <div><span style="color:#888;">线缆:</span> ${pd.cable.phy_type || '-'}</div>
-                            <div><span style="color:#888;">USB速度:</span> ${pd.cable.usb_speed || '-'}</div>
-                        ` : ''}
+                        <div><span style="color:#888;">电压:</span> ${voltage.toFixed(2)} V</div>
+                        <div><span style="color:#888;">电流:</span> ${current.toFixed(2)} A</div>
+                        <div><span style="color:#888;">功率:</span> ${power.toFixed(2)} W</div>
+                        <div><span style="color:#888;">PD版本:</span> ${pd.operating?.pd_revision || '-'}</div>
+                        ${batteryInfo}
+                        ${cableInfoHtml}
                         ${pd.status ? `
                             <div><span style="color:#888;">温度:</span> ${pd.status.temperature || 0} °C</div>
                         ` : ''}
@@ -2066,10 +2259,12 @@ function showPowerCurveDialog() {
         <div class="form-group">
             <label>选择端口</label>
             <select id="power-curve-port-id">
+                <option value="all">全部端口</option>
                 <option value="0">端口 1</option>
                 <option value="1">端口 2</option>
                 <option value="2">端口 3</option>
                 <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
             </select>
         </div>
         <div style="margin-top:10px;">
@@ -2078,21 +2273,75 @@ function showPowerCurveDialog() {
             </button>
         </div>
         <canvas id="power-chart" width="500" height="250" style="margin-top:15px;background:#1a1a2e;border-radius:8px;"></canvas>
-        <div id="power-chart-legend" style="margin-top:10px;display:flex;gap:15px;font-size:0.85em;">
-            <span><span style="color:#4CAF50;">●</span> 功率(W)</span>
-            <span><span style="color:#2196F3;">●</span> 电压(V)</span>
-            <span><span style="color:#FF9800;">●</span> 电流(A)</span>
-        </div>
+        <div id="power-chart-legend" style="margin-top:10px;display:flex;gap:15px;font-size:0.85em;flex-wrap:wrap;"></div>
     `;
     showDialog('功率曲线', content, null);
+    updatePowerChartLegend();
     // Initial fetch
     setTimeout(() => {
-        const portId = parseInt(document.getElementById('power-curve-port-id')?.value || 0);
-        sendAction('get_power_historical_stats', { port_id: portId, offset: 0 });
+        fetchPowerCurveData();
     }, 100);
 }
 
+// 更新功率图例
+function updatePowerChartLegend() {
+    const legend = document.getElementById('power-chart-legend');
+    if (!legend) return;
+    const portSelect = document.getElementById('power-curve-port-id');
+    const selectedPort = portSelect?.value;
+    if (selectedPort === 'all') {
+        legend.innerHTML = `
+            <span><span style="color:#f44336;">●</span> 端口1</span>
+            <span><span style="color:#FF9800;">●</span> 端口2</span>
+            <span><span style="color:#4CAF50;">●</span> 端口3</span>
+            <span><span style="color:#2196F3;">●</span> 端口4</span>
+            <span><span style="color:#9C27B0;">●</span> 端口5</span>
+        `;
+    } else {
+        legend.innerHTML = `
+            <span><span style="color:#4CAF50;">●</span> 功率(W)</span>
+            <span><span style="color:#2196F3;">●</span> 电压(V)</span>
+            <span><span style="color:#FF9800;">●</span> 电流(A)</span>
+        `;
+    }
+}
+
 let powerCurveData = [];
+let powerCurveHistory = []; // 历史数据用于滚动显示
+let allPortsPowerHistory = [{}, {}, {}, {}, {}]; // 全端口功率历史
+const MAX_POWER_CURVE_POINTS = 60; // 最多显示60个数据点
+
+// 获取功率曲线数据
+function fetchPowerCurveData() {
+    const portSelect = document.getElementById('power-curve-port-id');
+    if (!portSelect) return;
+    const portVal = portSelect.value;
+
+    // 当切换端口选择器时，清空所有历史数据
+    if (portVal !== lastPortSelectValue) {
+        console.log(`[POWER_CURVE] Port selection changed from ${lastPortSelectValue} to ${portVal}, clearing history`);
+        lastPortSelectValue = portVal;
+        // 清空所有历史数据
+        allPortsPowerHistory = [{}, {}, {}, {}, {}];
+        powerCurveHistory = [];
+
+        // 清空画布
+        const canvas = document.getElementById('power-chart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    if (portVal === 'all') {
+        // 获取所有端口的当前功率数据（用于实时功率曲线）
+        sendAction('get_port_status');
+    } else {
+        // 获取单个端口的历史数据（用于历史功率曲线曲线）
+        sendAction('get_power_historical_stats', { port_id: parseInt(portVal), offset: 0 });
+    }
+}
 
 function togglePowerCurveAutoRefresh() {
     const btn = document.getElementById('power-curve-refresh-btn');
@@ -2104,10 +2353,11 @@ function togglePowerCurveAutoRefresh() {
         btn.classList.add('btn-success');
         addLog('功率曲线自动刷新已关闭', 'info');
     } else {
-        powerCurveRefreshTimer = setInterval(() => {
-            const portId = parseInt(document.getElementById('power-curve-port-id')?.value || 0);
-            sendAction('get_power_historical_stats', { port_id: portId, offset: 0 });
-        }, REFRESH_INTERVAL);
+        // 开启时重置历史数据
+        powerCurveHistory = [];
+        allPortsPowerHistory = [{}, {}, {}, {}, {}];
+        updatePowerChartLegend();
+        powerCurveRefreshTimer = setInterval(fetchPowerCurveData, REFRESH_INTERVAL);
         btn.innerHTML = '<i class="fas fa-stop"></i> 关闭自动刷新';
         btn.classList.remove('btn-success');
         btn.classList.add('btn-danger');
@@ -2128,10 +2378,35 @@ function handlePowerCurve(data) {
     const statList = stats.stats || [];
     const canvas = document.getElementById('power-chart');
 
-    // If canvas exists, draw chart
+    // If canvas exists, draw chart with scrolling
     if (canvas) {
-        powerCurveData = statList;
-        drawPowerChart(canvas, statList);
+        // 如果自动刷新开启，追加新数据实现滚动效果
+        if (powerCurveRefreshTimer) {
+            // 对于"全部端口"模式，使用handlePowerStatisticsForCurve处理
+            const portSelect = document.getElementById('power-curve-port-id');
+            if (portSelect && portSelect.value === 'all') {
+                // 由handlePowerStatisticsForCurve处理，这里不处理
+                return;
+            }
+
+            // 单端口模式：追加新数据实现滚动效果
+            if (statList.length > 0) {
+                const latestPoint = statList[0];
+                latestPoint.timestamp = Date.now();
+                powerCurveHistory.push(latestPoint);
+
+                // 保持最大数据点数量
+                while (powerCurveHistory.length > MAX_POWER_CURVE_POINTS) {
+                    powerCurveHistory.shift();
+                }
+
+                drawPowerChart(canvas, powerCurveHistory);
+            }
+        } else {
+            // 非自动刷新模式，直接显示返回的数据
+            powerCurveData = statList;
+            drawPowerChart(canvas, statList);
+        }
         return;
     }
 
@@ -2174,8 +2449,18 @@ function drawPowerChart(canvas, data) {
     const chartW = w - padding.left - padding.right;
     const chartH = h - padding.top - padding.bottom;
 
-    // Find max values
-    const maxPower = Math.max(...data.map(d => d.power || 0), 1);
+    // Find max values with smart scaling
+    let maxPower = Math.max(...data.map(d => d.power || 0));
+    // 智能Y轴刻度：向上取整到合适的刻度
+    if (maxPower <= 0) maxPower = 10;
+    else if (maxPower <= 10) maxPower = Math.ceil(maxPower / 2) * 2 || 2;
+    else if (maxPower <= 50) maxPower = Math.ceil(maxPower / 10) * 10;
+    else if (maxPower <= 100) maxPower = Math.ceil(maxPower / 20) * 20;
+    else maxPower = Math.ceil(maxPower / 50) * 50;
+
+    // 确保至少有10W的刻度范围
+    if (maxPower < 10) maxPower = 10;
+
     const maxVoltage = Math.max(...data.map(d => d.voltage || 0), 1);
     const maxCurrent = Math.max(...data.map(d => d.current || 0), 1);
 
@@ -2217,6 +2502,351 @@ function drawPowerChart(canvas, data) {
         const val = Math.round(maxPower * (4 - i) / 4);
         ctx.fillText(val + 'W', padding.left - 5, y + 3);
     }
+
+    // X-axis time labels (显示相对时间)
+    ctx.textAlign = 'center';
+    const totalSeconds = data.length * 2; // 每个点约2秒
+    for (let i = 0; i <= 4; i++) {
+        const x = padding.left + (i / 4) * chartW;
+        const secondsAgo = Math.round(totalSeconds * (1 - i / 4));
+        const label = secondsAgo === 0 ? '现在' : `-${secondsAgo}s`;
+        ctx.fillText(label, x, h - 5);
+    }
+}
+
+// 处理全端口功率曲线数据
+function handlePowerStatisticsForCurve(data) {
+    const canvas = document.getElementById('power-chart');
+    const portSelect = document.getElementById('power-curve-port-id');
+    if (!canvas || !portSelect || portSelect.value !== 'all') return false;
+
+    // 检查是否是 get_port_status 的响应格式（包含 ports 数组）
+    if (data.ports && Array.isArray(data.ports)) {
+        // 处理 get_port_status 的响应格式
+        console.log(`[POWER_CURVE] Received get_port_status response with ${data.ports.length} ports`);
+
+        data.ports.forEach(port => {
+            const portId = port.port_id;
+            if (portId >= 0 && portId < 5) {
+                const power = port.power || 0;
+                const ts = Date.now();
+                allPortsPowerHistory[portId][ts] = power;
+                console.log(`[POWER_CURVE] Port ${portId} power: ${power}W, voltage: ${port.voltage}V, current: ${port.current}A`);
+            }
+        });
+
+        // 清理旧数据
+        const ts = Date.now();
+        const cutoff = ts - MAX_POWER_CURVE_POINTS * REFRESH_INTERVAL;
+        for (let i = 0; i < 5; i++) {
+            for (const key of Object.keys(allPortsPowerHistory[i])) {
+                if (parseInt(key) < cutoff) delete allPortsPowerHistory[i][key];
+            }
+        }
+
+        drawAllPortsPowerChart(canvas);
+        return true;
+    } else if (data.port_id !== undefined) {
+        // 处理 get_power_statistics 的响应格式
+        const portId = data.port_id;
+        if (portId === undefined || portId < 0 || portId >= 5) return false;
+
+        // 调试日志：记录功率值
+        console.log(`[POWER_CURVE] Port ${portId} power: ${data.power}, voltage: ${data.voltage}, current: ${data.current}`);
+
+        const ts = Date.now();
+        allPortsPowerHistory[portId][ts] = data.power || 0;
+
+        // 清理旧数据
+        const cutoff = ts - MAX_POWER_CURVE_POINTS * REFRESH_INTERVAL;
+        for (let i = 0; i < 5; i++) {
+            for (const key of Object.keys(allPortsPowerHistory[i])) {
+                if (parseInt(key) < cutoff) delete allPortsPowerHistory[i][key];
+            }
+        }
+
+        drawAllPortsPowerChart(canvas);
+        return true;
+    }
+
+    // 不支持的格式
+    console.log(`[POWER_CURVE] Unsupported data format:`, data);
+    return false;
+}
+
+function drawAllPortsPowerChart(canvas) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    const chartW = w - padding.left - padding.right;
+    const chartH = h - padding.top - padding.bottom;
+    const colors = ['#f44336', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
+
+    // 收集所有时间戳和功率值
+    let allTimestamps = new Set();
+    let maxPower = 0;
+    for (let i = 0; i < 5; i++) {
+        for (const [ts, power] of Object.entries(allPortsPowerHistory[i])) {
+            allTimestamps.add(parseInt(ts));
+            if (power > maxPower) maxPower = power;
+        }
+    }
+
+    // 调试日志：显示最大功率值
+    console.log(`[DRAW_ALL_PORTS] maxPower before scaling: ${maxPower}`);
+    console.log(`[DRAW_ALL_PORTS] allPortsPowerHistory:`, allPortsPowerHistory);
+
+    // 智能Y轴刻度（与drawPowerChart保持一致）
+    if (maxPower <= 0) maxPower = 10;
+    else if (maxPower <= 10) maxPower = Math.ceil(maxPower / 2) * 2 || 2;
+    else if (maxPower <= 50) maxPower = Math.ceil(maxPower / 10) * 10;
+    else if (maxPower <= 100) maxPower = Math.ceil(maxPower / 20) * 20;
+    else maxPower = Math.ceil(maxPower / 50) * 50;
+
+    console.log(`[DRAW_ALL_PORTS] maxPower after scaling: ${maxPower}`);
+
+    // 确保至少有10W的刻度范围
+    if (maxPower < 10) maxPower = 10;
+
+    const timestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+    if (timestamps.length === 0) {
+        ctx.fillStyle = '#666';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无数据', w / 2, h / 2);
+        return;
+    }
+
+    const minTs = timestamps[0], maxTs = timestamps[timestamps.length - 1];
+    const tsRange = maxTs - minTs || 1;
+
+    // 画网格
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(w - padding.right, y);
+        ctx.stroke();
+    }
+
+    // 画每个端口的功率线
+    for (let portIdx = 0; portIdx < 5; portIdx++) {
+        const portData = allPortsPowerHistory[portIdx];
+        const sortedTs = Object.keys(portData).map(Number).sort((a, b) => a - b);
+        if (sortedTs.length < 2) continue;
+
+        ctx.strokeStyle = colors[portIdx];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        sortedTs.forEach((ts, i) => {
+            const x = padding.left + ((ts - minTs) / tsRange) * chartW;
+            const y = padding.top + chartH - (portData[ts] / maxPower) * chartH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Y轴标签
+    ctx.fillStyle = '#888';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        const val = Math.round(maxPower * (4 - i) / 4);
+        ctx.fillText(val + 'W', padding.left - 5, y + 3);
+    }
+}
+
+// ============ 温度曲线功能 ============
+let temperatureCurveHistory = [];
+let temperatureCurveRefreshTimer = null;
+const MAX_TEMP_CURVE_POINTS = 60;
+
+function showTemperatureCurveDialog() {
+    const content = `
+        <div class="form-group">
+            <label>选择端口</label>
+            <select id="temp-curve-port-id">
+                <option value="all">全部端口</option>
+                <option value="0">端口 1</option>
+                <option value="1">端口 2</option>
+                <option value="2">端口 3</option>
+                <option value="3">端口 4</option>
+                <option value="4">端口 5</option>
+            </select>
+        </div>
+        <div style="margin-top:10px;">
+            <button id="temp-curve-refresh-btn" class="btn btn-success btn-small" onclick="toggleTempCurveAutoRefresh()">
+                <i class="fas fa-play"></i> 开启自动刷新
+            </button>
+        </div>
+        <canvas id="temp-chart" width="500" height="250" style="margin-top:15px;background:#1a1a2e;border-radius:8px;"></canvas>
+        <div id="temp-chart-legend" style="margin-top:10px;display:flex;gap:15px;font-size:0.85em;">
+            <span><span style="color:#f44336;">●</span> 端口1</span>
+            <span><span style="color:#FF9800;">●</span> 端口2</span>
+            <span><span style="color:#4CAF50;">●</span> 端口3</span>
+            <span><span style="color:#2196F3;">●</span> 端口4</span>
+            <span><span style="color:#9C27B0;">●</span> 端口5</span>
+        </div>
+    `;
+    showDialog('温度曲线', content, null);
+    temperatureCurveHistory = [{}, {}, {}, {}, {}];
+    fetchTemperatureData();
+}
+
+function toggleTempCurveAutoRefresh() {
+    const btn = document.getElementById('temp-curve-refresh-btn');
+    if (temperatureCurveRefreshTimer) {
+        clearInterval(temperatureCurveRefreshTimer);
+        temperatureCurveRefreshTimer = null;
+        btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-success');
+        addLog('温度曲线自动刷新已关闭', 'info');
+    } else {
+        temperatureCurveHistory = [{}, {}, {}, {}, {}];
+        temperatureCurveRefreshTimer = setInterval(fetchTemperatureData, REFRESH_INTERVAL);
+        btn.innerHTML = '<i class="fas fa-stop"></i> 关闭自动刷新';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-danger');
+        addLog('温度曲线自动刷新已开启', 'info');
+    }
+}
+
+function fetchTemperatureData() {
+    const portSelect = document.getElementById('temp-curve-port-id');
+    if (!portSelect) return;
+    const portVal = portSelect.value;
+    if (portVal === 'all') {
+        for (let i = 0; i < 5; i++) {
+            sendAction('get_port_temperature', { port_id: i });
+        }
+    } else {
+        sendAction('get_port_temperature', { port_id: parseInt(portVal) });
+    }
+}
+
+function handlePortTemperatureForCurve(data) {
+    const canvas = document.getElementById('temp-chart');
+    if (!canvas) return false;
+
+    const portId = data.port_id || 0;
+    const temp = data.temperature || 0;
+    const now = Date.now();
+
+    if (!temperatureCurveHistory[portId]) temperatureCurveHistory[portId] = {};
+    temperatureCurveHistory[portId][now] = temp;
+
+    // 清理旧数据
+    const cutoff = now - MAX_TEMP_CURVE_POINTS * REFRESH_INTERVAL;
+    for (let i = 0; i < 5; i++) {
+        if (temperatureCurveHistory[i]) {
+            for (const ts of Object.keys(temperatureCurveHistory[i])) {
+                if (parseInt(ts) < cutoff) delete temperatureCurveHistory[i][ts];
+            }
+        }
+    }
+
+    drawTemperatureChart(canvas);
+    return true;
+}
+
+function drawTemperatureChart(canvas) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    const chartW = w - padding.left - padding.right;
+    const chartH = h - padding.top - padding.bottom;
+    const colors = ['#f44336', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
+
+    // 收集所有时间戳和温度值
+    let allTimestamps = new Set();
+    let maxTemp = 50;
+    for (let i = 0; i < 5; i++) {
+        if (temperatureCurveHistory[i]) {
+            for (const [ts, temp] of Object.entries(temperatureCurveHistory[i])) {
+                allTimestamps.add(parseInt(ts));
+                if (temp > maxTemp) maxTemp = temp;
+            }
+        }
+    }
+
+    const timestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+    if (timestamps.length === 0) {
+        ctx.fillStyle = '#666';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无数据', w / 2, h / 2);
+        return;
+    }
+
+    const minTs = timestamps[0], maxTs = timestamps[timestamps.length - 1];
+    const tsRange = maxTs - minTs || 1;
+
+    // 画网格
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(w - padding.right, y);
+        ctx.stroke();
+    }
+
+    // 画每个端口的温度线
+    const portSelect = document.getElementById('temp-curve-port-id');
+    const selectedPort = portSelect?.value;
+
+    for (let portId = 0; portId < 5; portId++) {
+        if (selectedPort !== 'all' && portId !== parseInt(selectedPort)) continue;
+        if (!temperatureCurveHistory[portId]) continue;
+
+        const entries = Object.entries(temperatureCurveHistory[portId]).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+        if (entries.length < 2) continue;
+
+        ctx.strokeStyle = colors[portId];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        entries.forEach(([ts, temp], idx) => {
+            const x = padding.left + ((parseInt(ts) - minTs) / tsRange) * chartW;
+            const y = padding.top + chartH - (temp / maxTemp) * chartH;
+            if (idx === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Y轴标签
+    ctx.fillStyle = '#888';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        const val = Math.round(maxTemp * (4 - i) / 4);
+        ctx.fillText(val + '°C', padding.left - 5, y + 3);
+    }
+
+    // X轴时间标签
+    ctx.textAlign = 'center';
+    const totalSeconds = Math.round(tsRange / 1000);
+    for (let i = 0; i <= 4; i++) {
+        const x = padding.left + (i / 4) * chartW;
+        const secondsAgo = Math.round(totalSeconds * (1 - i / 4));
+        const label = secondsAgo === 0 ? '现在' : `-${secondsAgo}s`;
+        ctx.fillText(label, x, h - 5);
+    }
 }
 
 let chargingSessionData = {};
@@ -2225,7 +2855,7 @@ function showChargingSessionDialog() {
     // Fetch all 4 ports
     addLog('正在获取所有端口充电会话...', 'info');
     chargingSessionData = {};
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         sendAction('get_start_charge_timestamp', { port_id: i });
     }
 
@@ -2250,12 +2880,12 @@ function handleChargingSession(data) {
     // If container exists, update expanded view
     if (container) {
         const portIdx = Object.keys(chargingSessionData).length;
-        if (portIdx < 4) {
+        if (portIdx < 5) {
             chargingSessionData[portIdx] = data;
         }
 
         // Render all ports when we have data
-        if (Object.keys(chargingSessionData).length >= 4 || !container.innerHTML.includes('正在加载')) {
+        if (Object.keys(chargingSessionData).length >= 5 || !container.innerHTML.includes('正在加载')) {
             renderChargingSessionExpanded();
         }
         return;
@@ -2288,11 +2918,13 @@ function renderChargingSessionExpanded() {
     if (!container) return;
 
     let html = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         const data = chargingSessionData[i] || {};
-        const timestamp = data.timestamp || 0;
-        const date = timestamp > 0 ? new Date(timestamp * 1000) : null;
-        const isCharging = timestamp > 0;
+        // timestamp是设备启动后的毫秒数，不是Unix时间戳
+        const chargingAtMs = data.timestamp || 0;
+        const isCharging = chargingAtMs > 0;
+        // 计算充电时长（毫秒转秒）
+        const chargingDurationSec = isCharging ? Math.floor(chargingAtMs / 1000) : 0;
 
         html += `
             <div style="margin-bottom:12px;padding:12px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;">
@@ -2304,8 +2936,7 @@ function renderChargingSessionExpanded() {
                 </div>
                 ${isCharging ? `
                     <div style="margin-top:10px;font-size:0.9em;">
-                        <div><span style="color:#888;">开始时间:</span> ${date.toLocaleString('zh-CN')}</div>
-                        <div><span style="color:#888;">已充电:</span> ${formatDuration(Date.now() / 1000 - timestamp)}</div>
+                        <div><span style="color:#888;">充电开始于:</span> 设备运行 ${formatDuration(chargingDurationSec)} 时</div>
                     </div>
                 ` : '<p style="color:#666;margin:8px 0 0 0;font-size:0.9em;">无充电会话</p>'}
             </div>
@@ -2493,6 +3124,58 @@ function showDialog(title, content, action) {
 }
 
 function closeDialog() {
+    // 停止所有自动刷新定时器
+    if (portStatusRefreshTimer) {
+        clearInterval(portStatusRefreshTimer);
+        portStatusRefreshTimer = null;
+        const btn = document.getElementById('port-status-refresh-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+        }
+    }
+    if (cableInfoRefreshTimer) {
+        clearInterval(cableInfoRefreshTimer);
+        cableInfoRefreshTimer = null;
+        const btn = document.getElementById('cable-info-refresh-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+        }
+    }
+    if (powerCurveRefreshTimer) {
+        clearInterval(powerCurveRefreshTimer);
+        powerCurveRefreshTimer = null;
+        const btn = document.getElementById('power-curve-refresh-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+        }
+    }
+    if (temperatureCurveRefreshTimer) {
+        clearInterval(temperatureCurveRefreshTimer);
+        temperatureCurveRefreshTimer = null;
+        const btn = document.getElementById('temp-curve-refresh-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+        }
+    }
+    if (debugLogRefreshTimer) {
+        clearInterval(debugLogRefreshTimer);
+        debugLogRefreshTimer = null;
+        const btn = document.getElementById('debug-log-refresh-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+        }
+    }
+
     document.getElementById('dialog-overlay').classList.add('hidden');
     currentDialogAction = null;
 }
@@ -2573,27 +3256,35 @@ function getDebugLog() {
     sendAction('get_debug_log');
 }
 
+// 调试日志自动刷新定时器
+let debugLogRefreshTimer = null;
+
 function handleDebugLog(data) {
     const log = data?.log || '无日志';
     const content = `
         <div class="info-display">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <span style="color:#888;">设备调试日志 (最大1024字节)</span>
-                <button class="btn btn-small btn-secondary" onclick="copyDebugLog()">
-                    <i class="fas fa-copy"></i> 复制
-                </button>
+                <div style="display:flex;gap:10px;">
+                    <button id="debug-log-refresh-btn" class="btn btn-success btn-small" onclick="toggleDebugLogAutoRefresh()">
+                        <i class="fas fa-play"></i> 开启自动刷新
+                    </button>
+                    <button class="btn btn-small btn-secondary" onclick="copyDebugLog()">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
             </div>
             <pre id="debug-log-content" style="
                 white-space:pre-wrap;
                 word-break:break-all;
-                max-height:400px;
+                max-height:500px;
                 overflow:auto;
                 background:#1a1a2e;
                 padding:12px;
                 border-radius:8px;
                 font-family:monospace;
-                font-size:12px;
-                line-height:1.5;
+                font-size:13px;
+                line-height:1.6;
                 color:#e0e0e0;
             ">${escapeHtml(log)}</pre>
             <div style="margin-top:10px;font-size:0.85em;color:#666;">
@@ -2602,6 +3293,26 @@ function handleDebugLog(data) {
         </div>
     `;
     showDialog('调试日志', content, null);
+}
+
+function toggleDebugLogAutoRefresh() {
+    const btn = document.getElementById('debug-log-refresh-btn');
+    if (debugLogRefreshTimer) {
+        clearInterval(debugLogRefreshTimer);
+        debugLogRefreshTimer = null;
+        btn.innerHTML = '<i class="fas fa-play"></i> 开启自动刷新';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-success');
+        addLog('调试日志自动刷新已关闭', 'info');
+    } else {
+        debugLogRefreshTimer = setInterval(() => {
+            sendAction('get_debug_log');
+        }, REFRESH_INTERVAL);
+        btn.innerHTML = '<i class="fas fa-stop"></i> 关闭自动刷新';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-danger');
+        addLog('调试日志自动刷新已开启', 'info');
+    }
 }
 
 function escapeHtml(text) {

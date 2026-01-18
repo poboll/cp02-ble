@@ -6,6 +6,8 @@ Supports all 78 BLE commands with auto token refresh and auto reconnect
 
 import asyncio
 import json
+import signal
+import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
@@ -35,6 +37,7 @@ from protocol import (
 # Global BLE manager instance
 ble_manager: Optional[BLEManager] = None
 websocket_clients: List[WebSocket] = []
+shutdown_event = asyncio.Event()
 
 
 async def broadcast_log(message: str):
@@ -69,17 +72,73 @@ async def broadcast_status():
             pass
 
 
+async def graceful_shutdown():
+    """Gracefully shutdown the application"""
+    print("正在优雅关闭应用...")
+    
+    # 断开BLE连接
+    if ble_manager and ble_manager.connected:
+        print("正在断开BLE连接...")
+        try:
+            await ble_manager.disconnect()
+            print("BLE连接已断开")
+        except Exception as e:
+            print(f"断开BLE连接时出错: {e}")
+    
+    # 关闭所有WebSocket连接
+    print("正在关闭WebSocket连接...")
+    for ws in websocket_clients:
+        try:
+            await ws.close()
+        except:
+            pass
+    websocket_clients.clear()
+    
+    # 设置关闭事件
+    shutdown_event.set()
+    print("应用已优雅关闭")
+
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals"""
+    print(f"收到信号 {signum}，正在优雅关闭...")
+    # 使用asyncio.create_task来避免阻塞
+    asyncio.create_task(graceful_shutdown())
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     global ble_manager
     ble_manager = BLEManager(log_callback=lambda msg: asyncio.create_task(broadcast_log(msg)))
-    yield
-    if ble_manager and ble_manager.connected:
-        await ble_manager.disconnect()
+    try:
+        yield
+    finally:
+        # 优雅关闭
+        if ble_manager and ble_manager.connected:
+            print("应用关闭时正在断开BLE连接...")
+            try:
+                await ble_manager.disconnect()
+                print("BLE连接已断开")
+            except Exception as e:
+                print(f"断开BLE连接时出错: {e}")
+        
+        # 关闭所有WebSocket连接
+        print("应用关闭时正在关闭WebSocket连接...")
+        for ws in websocket_clients:
+            try:
+                await ws.close()
+            except:
+                pass
+        websocket_clients.clear()
+        print("应用已优雅关闭")
 
 
 app = FastAPI(title="IonBridge BLE Controller", lifespan=lifespan)
+
+# 注册信号处理器
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 # Serve static files
 static_path = Path(__file__).parent / "static"
@@ -269,11 +328,21 @@ async def handle_get_device_info(params: dict) -> dict:
     if resp and resp.payload:
         info["serial"] = resp.payload.decode('utf-8', errors='replace').strip('\x00')
     
-    # Get uptime
+    # Get uptime (确保获取到数据)
     resp = await ble_manager.execute(ServiceCommand.GET_DEVICE_UPTIME)
-    if resp and resp.payload and len(resp.payload) >= 4:
-        uptime = int.from_bytes(resp.payload[:4], 'little')
-        info["uptime"] = uptime
+    if resp and resp.payload and len(resp.payload) >= 8:
+        uptime_us = int.from_bytes(resp.payload[:8], 'little')
+        uptime_sec = uptime_us // 1000000  # 微秒转秒
+        info["uptime"] = uptime_sec
+        # 格式化运行时间
+        hours = uptime_sec // 3600
+        minutes = (uptime_sec % 3600) // 60
+        seconds = uptime_sec % 60
+        info["uptime_formatted"] = f"{hours}h {minutes}m {seconds}s"
+    else:
+        # 如果无法获取uptime，设置默认值
+        info["uptime"] = 0
+        info["uptime_formatted"] = "0h 0m 0s"
     
     # Get BLE address
     resp = await ble_manager.execute(ServiceCommand.GET_DEVICE_BLE_ADDR)
@@ -600,18 +669,21 @@ async def handle_set_port_priority(params: dict) -> dict:
 
 
 async def handle_get_port_priority(params: dict) -> dict:
-    """Get port priority"""
-    port_id = params.get("port_id", 0)
-    
-    resp = await ble_manager.execute(ServiceCommand.GET_PORT_PRIORITY, bytes([port_id]))
-    
+    """Get all port priorities"""
+    resp = await ble_manager.execute(ServiceCommand.GET_PORT_PRIORITY)
+
     if not resp or not resp.payload:
         return {"success": False, "message": "获取端口优先级失败"}
-    
-    priority = resp.payload[0] if resp.payload else 0
+
+    # 返回所有端口的优先级数组
+    priorities = list(resp.payload[:5]) if len(resp.payload) >= 5 else list(resp.payload)
+    # 确保返回5个端口的优先级
+    while len(priorities) < 5:
+        priorities.append(len(priorities))
+
     return {
         "success": True,
-        "data": {"port_id": port_id, "priority": priority}
+        "data": {"priorities": priorities}
     }
 
 
@@ -819,16 +891,17 @@ async def handle_get_port_max_power(params: dict) -> dict:
 
 
 async def handle_get_port_temperature(params: dict) -> dict:
-    """Get port temperature"""
+    """Get port temperature - uses GET_POWER_STATISTICS which includes temperature"""
     port_id = params.get("port_id", 0)
-    
-    resp = await ble_manager.execute(ServiceCommand.GET_PORT_TEMPERATURE, bytes([port_id]))
-    
-    if not resp or not resp.payload:
+
+    # GET_POWER_STATISTICS returns: [fc_protocol, amperage, voltage, temperature]
+    resp = await ble_manager.execute(ServiceCommand.GET_POWER_STATISTICS, bytes([port_id]))
+
+    if not resp or not resp.payload or len(resp.payload) < 4:
         return {"success": False, "message": "获取端口温度失败"}
-    
-    temperature = resp.payload[0] if resp.payload else 0
-    
+
+    temperature = resp.payload[3]  # 4th byte is temperature
+
     return {"success": True, "data": {"port_id": port_id, "temperature": temperature}}
 
 
@@ -1146,6 +1219,7 @@ async def handle_get_port_pd_status(params: dict) -> dict:
         return {"success": False, "message": "获取端口PD状态失败"}
     
     data = parse_port_pd_status_response(resp.payload)
+    data["port_id"] = port_id  # Include port_id in response
     return {"success": True, "data": data}
 
 
@@ -1276,7 +1350,7 @@ async def handle_ping_http(params: dict) -> dict:
     url = params.get("url", "")
     if not url:
         return {"success": False, "message": "请提供HTTP URL参数", "data": {"note": "此命令需要URL参数才能测试HTTP连接"}}
-    resp = await ble_manager.execute(ServiceCommand.PING_HTTP, url.encode('utf-8'))
+    resp = await ble_manager.execute(ServiceCommand.PING_HTTP, url.encode('utf-8'), timeout=15.0)
     return {"success": resp is not None, "data": {"status": "command_ok" if resp else "command_failed", "url": url}}
 
 

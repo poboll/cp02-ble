@@ -330,7 +330,8 @@ class BLEManager:
         return self.token_manager.token
     
     async def execute(self, service: int, extra_payload: bytes = b'',
-                      needs_token: bool = True, auto_reconnect: bool = True) -> Optional[BLEResponse]:
+                      needs_token: bool = True, auto_reconnect: bool = True,
+                      timeout: float = 5.0) -> Optional[BLEResponse]:
         """Execute a command with automatic token handling and auto-reconnect"""
         if needs_token:
             token = await self.ensure_token()
@@ -340,9 +341,9 @@ class BLEManager:
             payload = bytes([token]) + extra_payload
         else:
             payload = extra_payload
-        
-        response = await self.send_command(service, payload)
-        
+
+        response = await self.send_command(service, payload, timeout=timeout)
+
         # If command failed and auto-reconnect is enabled, try to reconnect
         if auto_reconnect and response is None and not self.token_manager._acquiring:
             self.log("命令失败，尝试重新连接...")
@@ -353,7 +354,7 @@ class BLEManager:
                     if token is None:
                         return None
                     payload = bytes([token]) + extra_payload
-                response = await self.send_command(service, payload)
+                response = await self.send_command(service, payload, timeout=timeout)
         
         return response
     

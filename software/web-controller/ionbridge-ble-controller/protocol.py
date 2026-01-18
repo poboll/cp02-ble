@@ -824,7 +824,7 @@ def parse_power_statistics_response(payload: bytes) -> dict:
     - fc_protocol (1 byte): 快充协议
     - amperage_scaled (1 byte): 电流，实际值 = value / 32 A
     - voltage_scaled (1 byte): 电压，实际值 = value / 8 V
-    - temperature (1 byte): 温度（摄氏度）
+    - temperature (1 byte): 温度（摄氏度，有符号字节）
     - battery_last_full_charge_capacity (2 bytes, little-endian)
     - battery_present_capacity (2 bytes, little-endian)
     """
@@ -838,7 +838,11 @@ def parse_power_statistics_response(payload: bytes) -> dict:
         fc_protocol = payload[1]
         amperage_scaled = payload[2]
         voltage_scaled = payload[3]
-        temperature = payload[4]
+        temperature_raw = payload[4]
+        
+        # 温度使用有符号字节转换（解决1600多度的问题）
+        # 如果温度字节 >= 128，则表示负数（使用补码）
+        temperature = temperature_raw if temperature_raw < 128 else temperature_raw - 256
         
         # 转换为实际值
         voltage = voltage_scaled / 8.0  # V
@@ -968,71 +972,86 @@ def parse_device_serial_response(payload: bytes) -> dict:
 
 def parse_device_uptime_response(payload: bytes) -> dict:
     """解析设备运行时间响应"""
-    if len(payload) < 4:
+    if len(payload) < 8:
         return {'error': 'Response too short'}
-    
-    uptime = (payload[0] << 24) | (payload[1] << 16) | (payload[2] << 8) | payload[3]
-    
-    return {'uptime': uptime}
+    # 设备返回微秒 (int64_t from esp_timer_get_time())
+    uptime_us = int.from_bytes(payload[:8], 'little')
+    uptime_sec = uptime_us // 1000000
+    return {'uptime': uptime_sec}
 
 
 def parse_power_historical_stats_response(payload: bytes) -> dict:
     """解析历史功率统计响应
-    
+
     响应格式（根据power_handler.cpp的GetPowerHistoricalStats）:
-    请求: [port_id, offset_low, offset_high] (可选offset)
-    响应: PortStatsData数组（每个4字节：voltage, amperage, temperature, vin_value）
-    
-    PortStatsData结构:
-    - voltage (1 byte): 电压，实际值 = value / 8 V
-    - amperage (1 byte): 电流，实际值 = value / 32 A
-    - temperature (1 byte): 温度（摄氏度）
-    - vin_value (1 byte): 输入电压，实际值 = value / 8 V
+    - offset (2 bytes, little-endian): 数据偏移量
+    - 然后每个数据点2字节: [amperage, voltage]
+
+    数据转换:
+    - voltage: 实际值 = value / 8 V
+    - amperage: 实际值 = value / 32 A
     """
-    if len(payload) < 1:
-        return {'error': 'Response too short'}
-    
-    port_id = payload[0]
-    stats_data = payload[1:]
-    
-    # 每个历史数据点4字节
+    if len(payload) < 2:
+        return {'error': 'Response too short', 'stats': []}
+
+    offset = int.from_bytes(payload[:2], 'little')
+    stats_data = payload[2:]
+
+    # 每个历史数据点2字节 (amperage, voltage)
     stats = []
-    chunk_size = 4
-    
+    chunk_size = 2
+
     for i in range(len(stats_data) // chunk_size):
         chunk = stats_data[i * chunk_size : (i + 1) * chunk_size]
-        if len(chunk) < 4:
+        if len(chunk) < 2:
             continue
-        
-        voltage_scaled = chunk[0]
-        amperage_scaled = chunk[1]
-        temperature = chunk[2]
-        vin_scaled = chunk[3]
-        
+
+        amperage_scaled = chunk[0]
+        voltage_scaled = chunk[1]
+
         # 转换为实际值
         voltage = voltage_scaled / 8.0  # V
         current = amperage_scaled / 32.0  # A
         power = voltage * current  # W
-        vin = vin_scaled / 8.0  # V
-        
+
         stats.append({
             'index': i,
             'voltage': round(voltage, 2),
             'current': round(current, 3),
             'power': round(power, 2),
-            'temperature': temperature,
-            'vin': round(vin, 2)
+            'temperature': 0
         })
-    
+
     return {
-        'port_id': port_id,
+        'offset': offset,
         'stats': stats,
         'count': len(stats)
     }
 
 
 def parse_port_pd_status_response(payload: bytes) -> dict:
-    """解析端口PD状态响应 - 支持可变长度响应"""
+    """解析端口PD状态响应 - 基于ClientPDStatus结构体
+
+    ClientPDStatus结构体布局 (128 bytes total):
+    bytes 0-1:   battery_vid (uint16)
+    bytes 2-3:   battery_pid (uint16)
+    bytes 4-5:   battery_design_capacity (uint16) - 0.1 WH units
+    bytes 6-7:   battery_last_full_charge_capacity (uint16) - 0.1 WH units
+    bytes 8-9:   battery_present_capacity (uint16) - 0.1 WH units
+    bytes 10-14: 位域 (battery flags, cable info)
+    byte 15:     status_temperature (uint8)
+    bytes 16-17: cable_vid (uint16)
+    bytes 18-19: cable_pid (uint16)
+    bytes 20-21: manufacturer_vid (uint16)
+    bytes 22-23: manufacturer_pid (uint16)
+    byte 24:     sink_minimum_pdp (uint8)
+    byte 25:     sink_operational_pdp (uint8)
+    byte 26:     sink_maximum_pdp (uint8)
+    byte 27:     unused0 (uint8)
+    bytes 28-31: operating_current (10 bits) + pd_revision (2 bits) + flags (4 bits) + operating_voltage (15 bits) + ppsavs (1 bit)
+    bytes 32-35: cable_xid (uint32)
+    bytes 36-37: bcd_device (uint16)
+    """
     result = {'raw': payload.hex()}
     n = len(payload)
 
@@ -1040,61 +1059,120 @@ def parse_port_pd_status_response(payload: bytes) -> dict:
         result['error'] = 'Response too short'
         return result
 
-    # 安全读取函数
     def get_byte(offset, default=0):
         return payload[offset] if offset < n else default
 
     def get_word(offset, default=0):
         return int.from_bytes(payload[offset:offset+2], 'little') if offset + 1 < n else default
 
-    # 电池信息
+    def get_dword(offset, default=0):
+        return int.from_bytes(payload[offset:offset+4], 'little') if offset + 3 < n else default
+
+    # 电池信息 (bytes 0-9)
+    design_cap = get_word(4) / 10.0  # 0.1 WH units
+    last_full_cap = get_word(6) / 10.0
+    present_cap = get_word(8) / 10.0
+    battery_percent = int(present_cap / last_full_cap * 100) if last_full_cap > 0 else 0
+
     result['battery'] = {
         'vid': f"0x{get_word(0):04X}",
         'pid': f"0x{get_word(2):04X}",
-        'design_capacity': get_word(4) / 10.0,
-        'last_full_capacity': get_word(6) / 10.0,
-        'present_capacity': get_word(8) / 10.0,
+        'design_capacity': design_cap,
+        'last_full_capacity': last_full_cap,
+        'present_capacity': present_cap,
+        'percent': battery_percent,
         'present': bool(get_byte(10) & 0x02),
         'status_name': {0: "充电中", 1: "放电中", 2: "空闲"}.get((get_byte(10) >> 2) & 0x03, "未知")
     }
 
-    # 线缆信息
-    cable_flags = get_byte(10)
-    cable_voltage_flags = get_byte(11)
-    cable_speed_flags = get_byte(12)
+    # 线缆信息 (bytes 10-14 bit fields, then 16-19)
+    cable_byte10 = get_byte(10)
+    cable_byte11 = get_byte(11)
+    cable_byte12 = get_byte(12)
+    
+    # 解析线缆长度 (cable_latency字段，4位)
+    cable_latency = cable_byte10 & 0x0F
+    cable_length_map = {
+        0x01: "<1m",
+        0x02: "~2m",
+        0x03: "~3m",
+        0x04: "~4m",
+        0x05: "~5m",
+        0x06: "~6m",
+        0x07: "~7m",
+        0x08: ">7m"
+    }
+    cable_length = cable_length_map.get(cable_latency, "未知")
+    
     result['cable'] = {
-        'is_active': bool(cable_flags & 0x04),
-        'epr_mode_capable': bool(cable_flags & 0x10),
-        'phy_type': "光缆" if (cable_flags >> 5) & 0x01 else "铜缆",
-        'length': {0: "<1m", 1: "~1m", 2: "~2m", 3: "~3m"}.get((cable_flags >> 6) & 0x0F, ">3m"),
-        'max_voltage': {0: "20V", 1: "30V", 2: "40V", 3: "50V"}.get(cable_voltage_flags & 0x03, "未知"),
-        'max_current': {0: "未知", 1: "3A", 2: "5A"}.get((cable_voltage_flags >> 2) & 0x03, "未知"),
-        'usb_speed': {0: "USB 2.0", 1: "USB 3.2 Gen1", 2: "USB 3.2 Gen2", 3: "USB4 Gen3"}.get(cable_speed_flags & 0x07, "未知"),
-        'vid': f"0x{get_word(14):04X}",
-        'pid': f"0x{get_word(16):04X}"
+        'is_active': bool(cable_byte10 & 0x10),
+        'phy_type': "光缆" if (cable_byte10 >> 7) & 0x01 else "铜缆",
+        'max_voltage': {0: "20V", 1: "30V", 2: "40V", 3: "50V"}.get((cable_byte11 >> 4) & 0x03, "未知"),
+        'max_current': {0: "未知", 1: "3A", 2: "5A"}.get((cable_byte11 >> 6) & 0x03, "未知"),
+        'usb_speed': {0: "USB 2.0", 1: "USB 3.2 Gen1", 2: "USB 3.2 Gen2", 3: "USB4 Gen3"}.get(cable_byte12 & 0x07, "未知"),
+        'vid': f"0x{get_word(16):04X}",
+        'pid': f"0x{get_word(18):04X}",
+        'length': cable_length
     }
 
-    # 操作信息
-    op_current_low = get_byte(34)
-    op_current_high = get_byte(35)
-    op_current = ((op_current_high & 0x03) << 8) | op_current_low
-    op_current_amps = op_current / 100.0
-    op_voltage = ((get_byte(38) << 8) | get_byte(37)) & 0x7FFF
-    op_voltage_volts = op_voltage / 100.0
-    op_flags = get_byte(36)
+    # 状态温度 (byte 15) - 使用有符号字节转换
+    status_temperature = get_byte(15)
+    if status_temperature >= 128:
+        status_temperature = status_temperature - 256
+    result['status'] = {'temperature': status_temperature}
 
+    # 操作信息 (bytes 28-31) - 使用32位整数解析位域
+    # 结构: operating_current(10) + pd_revision(2) + pps(1) + has_battery(1) + dual_role(1) + has_emarker(1) + operating_voltage(15) + ppsavs(1)
+    if n < 32:
+        result['operating'] = {
+            'current': 0,
+            'voltage': 0,
+            'power': 0,
+            'pd_revision': "未知",
+            'pps_charging_supported': False,
+            'has_battery': False,
+            'has_emarker': False
+        }
+        return result
+    
+    op_dword = get_dword(28)
+    
+    # 调试日志
+    print(f"[PD_DEBUG] bytes 28-31 raw: {payload[28:32].hex()}")
+    print(f"[PD_DEBUG] op_dword: 0x{op_dword:08X}")
+    
+    # 提取位域
+    op_current = op_dword & 0x3FF  # bits 0-9: operating_current (10 bits)
+    pd_revision = (op_dword >> 10) & 0x03  # bits 10-11: pd_revision (2 bits)
+    pps_supported = bool((op_dword >> 12) & 0x01)  # bit 12: pps_charging_supported
+    has_battery = bool((op_dword >> 13) & 0x01)  # bit 13: has_battery
+    dual_role_power = bool((op_dword >> 14) & 0x01)  # bit 14: dual_role_power
+    has_emarker = bool((op_dword >> 15) & 0x01)  # bit 15: has_emarker
+    op_voltage = (op_dword >> 16) & 0x7FFF  # bits 16-30: operating_voltage (15 bits)
+    
+    # 调试日志
+    print(f"[PD_DEBUG] op_current raw: {op_current}, op_voltage raw: {op_voltage}")
+    
+    # 转换单位 (10mA for current, 10mV for voltage)
+    current_ma = op_current * 10  # 10mA units
+    voltage_mv = op_voltage * 10  # 10mV units
+    
+    # 转换为标准单位
+    current_a = current_ma / 1000.0  # mA to A
+    voltage_v = voltage_mv / 1000.0  # mV to V
+    power_w = current_a * voltage_v  # W
+    
+    print(f"[PD_DEBUG] current: {current_a:.3f}A, voltage: {voltage_v:.2f}V, power: {power_w:.2f}W")
+    
     result['operating'] = {
-        'current': round(op_current_amps, 2),
-        'voltage': round(op_voltage_volts, 2),
-        'power': round(op_current_amps * op_voltage_volts, 2),
-        'pd_revision': {0: "1.0", 1: "2.0", 3: "3.0"}.get((op_current_high >> 2) & 0x03, "未知"),
-        'pps_charging_supported': bool(op_flags & 0x01),
-        'has_battery': bool(op_flags & 0x02),
-        'has_emarker': bool(op_flags & 0x08)
+        'current': round(current_a, 3),  # A
+        'voltage': round(voltage_v, 2),  # V
+        'power': round(power_w, 2),  # W
+        'pd_revision': {0: "1.0", 1: "2.0", 2: "2.0", 3: "3.0"}.get(pd_revision, "未知"),
+        'pps_charging_supported': pps_supported,
+        'has_battery': has_battery,
+        'has_emarker': has_emarker
     }
-
-    # 状态温度
-    result['status'] = {'temperature': get_byte(33)}
 
     return result
 
