@@ -1,0 +1,3572 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #000000;
+    min-height: 100vh;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* 针对特定滚动容器的强制隐藏 */
+.ports-container,
+.control-panel,
+.device-list-container,
+.status-log,
+.panel-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.ports-container::-webkit-scrollbar,
+.control-panel::-webkit-scrollbar,
+.device-list-container::-webkit-scrollbar,
+.status-log::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar {
+    display: none !important;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+}
+
+/* 头部样式 */
+.header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.header-left-group {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* Title and toggle distance */
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    margin: 0;
+}
+
+/* 网关选择器样式 (新增) */
+.gateway-selector {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin-left: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.gateway-select {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.gateway-select option {
+    background: #12121a;
+    color: #fff;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #00f5ff;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.disconnected {
+    background: #ff6b6b;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* iPad三列布局 */
+.main-layout {
+    display: grid;
+    grid-template-columns: 280px 280px 1fr;
+    gap: 16px;
+    height: calc(100vh - 120px);
+    padding: 0 16px;
+}
+
+/* 左侧列 - 指标卡片和图表 */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 中间列 - 3D视图和充电桩状态 */
+.middle-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 右侧列 - 端口信息 */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* 右侧面板 */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+}
+
+/* 实时功率区域 */
+.power-section {
+    flex-shrink: 0;
+}
+
+.metrics-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.05);
+    /* backdrop-filter: blur(20px); */
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    min-height: 60px;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+}
+
+.power-card {
+    --card-color: #ff6b6b;
+    --card-color-light: #ff8e8e;
+}
+
+.voltage-card {
+    --card-color: #00f5ff;
+    --card-color-light: #4dd0e1;
+}
+
+.current-card {
+    --card-color: #3b82f6;
+    --card-color-light: #60a5fa;
+}
+
+.wifi-card {
+    --card-color: #10b981;
+    --card-color-light: #34d399;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.metric-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.metric-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-content h3 {
+    font-size: 9px;
+    font-weight: 500;
+    color: #aaa;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.metric-change {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+    min-width: 30px;
+    text-align: center;
+}
+
+.metric-change.positive {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.metric-change.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.metric-change.neutral {
+    background: rgba(107, 114, 128, 0.2);
+    color: #6b7280;
+}
+
+/* 图表区域 */
+.chart-section {
+    flex: 1;
+    min-height: 300px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.chart-mode-buttons {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.chart-mode-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    color: #aaa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.chart-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.chart-mode-btn.active {
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+}
+
+.chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.wake-lock-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+    justify-content: center;
+}
+
+.wake-lock-btn .wake-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.wake-lock-btn .wake-text {
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.wake-lock-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.wake-lock-btn.active {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.wake-lock-btn.active .wake-icon {
+    content: '☀️';
+}
+
+#powerChart {
+    flex: 1;
+    min-height: 180px;
+    max-height: 200px;
+}
+
+/* 状态区域 */
+.status-section {
+    flex-shrink: 0;
+}
+
+.status-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-icon {
+    font-size: 20px;
+    width: 32px;
+    text-align: center;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-label {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.status-value {
+    display: block;
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* 端口区域 */
+.ports-section {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ports-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-left: 0.5em;
+}
+
+.refresh-btn {
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(0, 245, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 245, 255, 0.4);
+}
+
+.refresh-icon {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.refresh-btn.loading .refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 端口容器 */
+.ports-container {
+    flex: 1;
+    background: rgba(20, 20, 25, 0.95); /* 更深的不透明背景 */
+    /* backdrop-filter: blur(20px); 移除毛玻璃以提升性能 */
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-y: visible; /* 修复：不再独立滚动，允许页面整体滚动 */
+    height: auto;
+    /* 开启硬件加速 */
+    transform: translateZ(0);
+}
+
+/* 简洁模式下端口容器优化 - 适配不同设备高度 */
+.container.compact-mode .ports-container {
+    background: rgba(20, 20, 25, 0.95);
+    /* backdrop-filter: blur(20px); */
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+    padding: 20px 20px 100px 20px; /* 减少底部留白 */
+    overflow-y: visible; /* 修复滚动：改为visible让页面滚动 */
+    max-height: none;
+    min-height: 800px;
+    height: auto;
+    flex: 1;
+    scroll-behavior: smooth;
+}
+
+/* 简洁模式下端口网格额外底部空间 */
+.container.compact-mode .ports-grid {
+    padding-bottom: 120px;
+    min-height: 100%;
+}
+
+.ports-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.port-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 3px solid #333;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+}
+
+.port-item.active {
+    border-left-color: #00f5ff;
+    background: rgba(0, 245, 255, 0.05);
+    border-color: rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 24px rgba(0, 245, 255, 0.6);
+}
+
+.port-item.full {
+    border-left-color: #00FF90;
+    background: rgba(0, 255, 144, 0.05);
+    border-color: rgba(0, 255, 144, 0.2);
+    box-shadow: 0 0 12px rgba(0, 255, 144, 0.2);
+}
+
+.port-item.idle {
+    border-left-color: #555;
+}
+
+.port-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.port-title {
+    flex: 1;
+}
+
+.port-id {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.manufacturer-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1);
+    flex-shrink: 0;
+}
+
+.qualcomm-badge {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+/* 左侧面板新布局 */
+.left-panel {
+    display: flex;
+    gap: 16px;
+}
+
+.left-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 指标卡片改为垂直排列 */
+.metrics-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metric-card {
+    width: 100%;
+}
+
+/* 3D充电站可视化区域 */
+.reallyvison-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 370px;
+    overflow: visible;
+}
+
+.reallyvison-header {
+    margin-bottom: 16px;
+}
+
+.reallyvison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reallyvison-header h3 {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* 切换按钮容器 */
+.toggle-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* 自定义旋转切换按钮 */
+.rotation-toggle, .layout-toggle {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rotation-toggle .toggle-text, .layout-toggle .toggle-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.rotation-toggle:hover, .layout-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.rotation-toggle.active {
+    background: rgba(38, 255, 255, 0.2);
+    border-color: rgba(38, 255, 255, 0.4);
+}
+
+.rotation-toggle.active .toggle-text {
+    color: #26FFFF;
+}
+
+.layout-toggle.active {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.4);
+}
+
+.layout-toggle.active .toggle-text {
+    color: #ff6b6b;
+}
+
+.reallyvison {
+    width: 238px;
+    height: 317px;
+    position: relative;
+    background-image: url('chongdianzhan.png');
+    background-size: 112px 200px;
+    background-repeat: no-repeat;
+    background-position: 63px 47px;
+    border-radius: 8px;
+    overflow: visible;
+    margin: 0 auto;
+    opacity: 0.6; /* 默认透明度60%（无端口充电） */
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+}
+
+/* 旋转状态 - 逆时针90度 */
+.reallyvison.rotated {
+    transform: rotate(-90deg);
+}
+
+/* 有端口充电时的透明度 */
+.reallyvison.charging {
+    opacity: 1.0; /* 充电时透明度100%（完全不透明） */
+}
+
+/* 充电状态指示图层 - 在背景图上方 */
+.charging-indicator {
+    position: absolute;
+    width: 112px;
+    height: 200px;
+    background-size: 112px 200px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    z-index: 3;
+    left: 63px;
+    top: 47px;
+    display: none;
+    transition: all 0.5s ease;
+}
+
+/* 端口4充电指示图始终在背景图后面 */
+.charging-indicator.charging-port-4 {
+    z-index: -1 !important;
+}
+
+/* 横屏模式下端口4充电指示图仍保持在背景图后面 */
+.reallyvison.rotated .charging-indicator.charging-port-4 {
+    z-index: -1 !important;
+}
+
+/* 端口0-3充电指示图动画 - 从左往右滑入 */
+.charging-indicator.slide-in-left {
+    animation: slideInFromLeft 0.5s ease forwards;
+}
+
+.charging-indicator.slide-out-right {
+    animation: slideOutToRight 0.5s ease forwards;
+}
+
+/* 端口4充电指示图动画 - 从下往上滑入 */
+.charging-indicator.slide-in-up {
+    animation: slideInFromBottom 0.5s ease forwards;
+}
+
+.charging-indicator.slide-out-down {
+    animation: slideOutToBottom 0.5s ease forwards;
+}
+
+/* 动画关键帧 */
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromBottom {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToRight {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInFromBottom {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToBottom {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* 各端口充电指示图 */
+.charging-port-0 {
+    background-image: url('000.png');
+}
+
+.charging-port-1 {
+    background-image: url('001.png');
+}
+
+.charging-port-2 {
+    background-image: url('002.png');
+}
+
+.charging-port-3 {
+    background-image: url('003.png');
+}
+
+.charging-port-4 {
+    background-image: url('004.png');
+}
+
+/* 移除不需要的背景图片样式，现在使用CSS背景 */
+
+.cable-image {
+    position: absolute;
+    z-index: 2;
+    max-width: none;
+    height: auto;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.cable-image.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 线材位置样式 */
+.cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-apple, .cable-kutaike, .cable-huaxian {
+    position: absolute;
+    z-index: 2;
+    width: 90px;
+    height: 40px;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-putong.show, .cable-xili.show, .cable-xili2.show, .cable-yunduo.show, .cable-okokok.show, .cable-meizu.show, .cable-apple.show, .cable-kutaike.show, .cable-huaxian.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 简洁模式下线材尺寸调整 - 统一管理 */
+.container.compact-mode .cable-putong,
+.container.compact-mode .cable-xili,
+.container.compact-mode .cable-xili2,
+.container.compact-mode .cable-yunduo,
+.container.compact-mode .cable-okokok,
+.container.compact-mode .cable-meizu {
+    width: 180px;
+    height: 80px;
+}
+
+/* 简洁模式下特殊线材保持原始比例，防止拉伸变形 */
+.container.compact-mode .cable-apple,
+.container.compact-mode .cable-kutaike,
+.container.compact-mode .cable-huaxian {
+    width: 180px;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: auto;
+}
+
+/* 端口4线材样式 - 尺寸21x51 */
+.cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple, .cable-land-huaxian {
+    position: absolute;
+    z-index: -1; /* 在背景图下方 */
+    width: 21px;
+    height: 51px;
+    transition: all 0.5s ease;
+    transform: translateY(100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-land-putong.show, .cable-land-yunduo.show, .cable-land-xili2.show, .cable-land-okokok.show, .cable-land-meizu.show, .cable-land-kutaike.show, .cable-land-apple.show, .cable-land-huaxian.show {
+    transform: translateY(0);
+    opacity: 1;
+    animation: slideInFromBottom 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 横向模式下端口4仍保持在背景图下方 */
+.reallyvison.rotated .cable-land-putong,
+.reallyvison.rotated .cable-land-yunduo,
+.reallyvison.rotated .cable-land-xili2,
+.reallyvison.rotated .cable-land-okokok,
+.reallyvison.rotated .cable-land-meizu,
+.reallyvison.rotated .cable-land-kutaike,
+.reallyvison.rotated .cable-land-apple {
+    z-index: -1 !important;
+}
+
+/* 端口4线材在所有模式下都保持在背景图下方 */
+.cable-land-putong,
+.cable-land-yunduo,
+.cable-land-xili2,
+.cable-land-kutaike,
+.cable-land-apple {
+    z-index: -1 !important;
+}
+
+/* 端口0 USB检测样式 - 尺寸90x45 */
+.cable-usb {
+    position: absolute;
+    z-index: 2;
+    width: 90px;
+    height: 45px;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-usb.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 端口位置映射 - 基于112x200区域的精确坐标 */
+/* 端口1位置 (12, 135) */
+.cable-port-0 {
+    left: 12px;
+    top: 135px;
+}
+
+/* 端口2位置 (12, 168) */
+.cable-port-1 {
+    left: 12px;
+    top: 168px;
+}
+
+/* 端口3位置 (12, 200) */
+.cable-port-2 {
+    left: 12px;
+    top: 200px;
+}
+
+/* 端口4位置 (92, 235) - 在背景图下方 */
+.cable-port-3 {
+    left: 92px;
+    top: 235px;
+    z-index: -1; /* 在背景图下面 */
+}
+
+/* 端口0位置 (12, 90) - USB设备检测 */
+.cable-port-usb {
+    left: 12px;
+    top: 90px;
+    z-index: 2;
+}
+
+/* 端口线材位置 - 保持原始坐标 */
+#cable-port-1 {
+    left: 29px;
+    top: 339px;
+}
+
+#cable-port-2 {
+    left: 29px;
+    top: 419px;
+}
+
+#cable-port-3 {
+    left: 29px;
+    top: 499px;
+}
+
+.port-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.port-tag {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.device-tag {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.device-tag.qualcomm-device {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+}
+
+/* 飞智B8X散热器设备标签 */
+.device-tag.feizhi-device {
+    background: linear-gradient(135deg, #00f5ff 0%, #ff6b6b 50%, #8b5cf6 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 12px rgba(0, 245, 255, 0.4);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    animation: feizhiTagGlow 3s ease-in-out infinite;
+}
+
+@keyframes feizhiTagGlow {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.6);
+        transform: scale(1.05);
+    }
+}
+
+/* 飞智B8X散热器序列帧动画 */
+.feizhi-animation {
+    animation: feizhiGlow 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.6));
+}
+
+@keyframes feizhiGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.4)) brightness(1);
+        transform: scale(1);
+    }
+    25% {
+        filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.6)) brightness(1.2);
+        transform: scale(1.1);
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8)) brightness(1.3);
+        transform: scale(1.05);
+    }
+    75% {
+        filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.6)) brightness(1.1);
+        transform: scale(1.08);
+    }
+}
+
+/* 飞智B8X散热器端口彩色呼吸灯光 */
+.port-item.charging.feizhi-device {
+    position: relative;
+    overflow: hidden;
+}
+
+.port-item.charging.feizhi-device::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(0, 245, 255, 0.1) 0%, 
+        rgba(255, 107, 107, 0.1) 25%, 
+        rgba(139, 92, 246, 0.1) 50%, 
+        rgba(0, 245, 255, 0.1) 75%, 
+        rgba(255, 107, 107, 0.1) 100%);
+    animation: feizhiPortGlow 4s ease-in-out infinite;
+    z-index: -1;
+    border-radius: 6px;
+}
+
+/* 端口详情区域圆角矩形背景彩色霓虹光 */
+.port-item.charging.feizhi-device .port-metrics {
+    position: relative;
+    overflow: hidden;
+}
+
+.port-item.charging.feizhi-device .port-metric {
+    position: relative;
+    z-index: 1;
+}
+
+.port-item.charging.feizhi-device .port-metrics::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        #00f5ff 0%, 
+        #ff6b6b 25%, 
+        #8b5cf6 50%, 
+        #00f5ff 75%, 
+        #ff6b6b 100%);
+    background-size: 200% 200%;
+    animation: feizhiNeonGlow 3s ease-in-out infinite;
+    z-index: 0;
+    border-radius: 8px;
+    filter: blur(8px);
+    opacity: 0.8;
+}
+
+@keyframes feizhiPortGlow {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    25% {
+        opacity: 0.6;
+        transform: scale(1.02);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+    75% {
+        opacity: 0.5;
+        transform: scale(1.03);
+    }
+}
+
+@keyframes feizhiNeonGlow {
+    0%, 100% {
+        background-position: 0% 0%;
+        opacity: 0.8;
+    }
+    25% {
+        background-position: 100% 0%;
+        opacity: 1;
+    }
+    50% {
+        background-position: 100% 100%;
+        opacity: 0.8;
+    }
+    75% {
+        background-position: 0% 100%;
+        opacity: 1;
+    }
+}
+
+.cable-tag {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.cable-tag.slimbolt {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+}
+
+.cable-tag.ok-cable {
+    background: linear-gradient(135deg, #87c7ff 0%, #a19cff 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+.cable-tag.meizu-cable {
+    background: #FF6ED8;
+    color: #101843;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 110, 216, 0.3);
+}
+
+.cable-tag.apple-official {
+    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.cable-tag.kutaike-cable {
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.cable-tag.flower-cable {
+    background: linear-gradient(45deg, #FF1493 0%, #FF1493 25%, #0080FF 25%, #0080FF 50%, #FF1493 50%, #FF1493 75%, #0080FF 75%, #0080FF 100%);
+    background-size: 8px 8px;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 20, 147, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    animation: pixelShift 2s linear infinite;
+}
+
+@keyframes pixelShift {
+    0% { background-position: 0 0; }
+    100% { background-position: 8px 8px; }
+}
+
+/* 端口项充电背光效果 - 跟随线材标签颜色 */
+.port-item.charging.apple-official {
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6), inset 0 0 20px rgba(247, 147, 30, 0.3);
+    border: 1px solid rgba(255, 210, 63, 0.5);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.port-item.charging.kutaike-cable {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.port-item.charging.ok-cable {
+    box-shadow: 0 0 20px rgba(135, 199, 255, 0.6), inset 0 0 20px rgba(161, 156, 255, 0.3);
+    border: 1px solid rgba(135, 199, 255, 0.5);
+    background: rgba(135, 199, 255, 0.1);
+}
+
+.port-item.charging.meizu-cable {
+    box-shadow: 0 0 20px rgba(255, 110, 216, 0.6), inset 0 0 20px rgba(255, 110, 216, 0.3);
+    border: 1px solid rgba(255, 110, 216, 0.5);
+    background: rgba(255, 110, 216, 0.1);
+}
+
+.port-item.charging.slimbolt {
+    box-shadow: 0 0 20px rgba(255, 154, 86, 0.6), inset 0 0 20px rgba(255, 107, 53, 0.3);
+    border: 1px solid rgba(255, 154, 86, 0.5);
+    background: rgba(255, 154, 86, 0.1);
+}
+
+.port-item.charging.cloud-cable {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), inset 0 0 20px rgba(173, 216, 230, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.port-item.charging.kutaike-cable {
+    box-shadow: 0 0 20px rgba(53, 104, 255, 0.6), inset 0 0 20px rgba(46, 217, 255, 0.3);
+    border: 1px solid rgba(63, 255, 229, 0.5);
+    background: rgba(53, 104, 255, 0.1);
+}
+
+.port-item.charging.flower-cable {
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(0, 128, 255, 0.3);
+    border: 1px solid rgba(255, 20, 147, 0.5);
+    background: rgba(255, 20, 147, 0.1);
+    animation: flowerGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes flowerGlow {
+    0% {
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(0, 128, 255, 0.3);
+        border-color: rgba(255, 20, 147, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 25px rgba(0, 128, 255, 0.7), inset 0 0 25px rgba(255, 20, 147, 0.4);
+        border-color: rgba(0, 128, 255, 0.6);
+    }
+}
+
+.port-item.charging.default {
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.6), inset 0 0 20px rgba(0, 245, 255, 0.3);
+    border: 1px solid rgba(0, 245, 255, 0.5);
+    background: rgba(0, 245, 255, 0.1);
+}
+
+.battery-tag {
+    background: transparent;
+    border: 2px solid #1f1e29;
+    position: relative;
+    overflow: hidden;
+}
+
+.battery-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.battery-tag[data-progress="0"]::before { width: 0%; }
+.battery-tag[data-progress="1"]::before { width: 1%; }
+.battery-tag[data-progress="2"]::before { width: 2%; }
+.battery-tag[data-progress="3"]::before { width: 3%; }
+.battery-tag[data-progress="4"]::before { width: 4%; }
+.battery-tag[data-progress="5"]::before { width: 5%; }
+.battery-tag[data-progress="6"]::before { width: 6%; }
+.battery-tag[data-progress="7"]::before { width: 7%; }
+.battery-tag[data-progress="8"]::before { width: 8%; }
+.battery-tag[data-progress="9"]::before { width: 9%; }
+.battery-tag[data-progress="10"]::before { width: 10%; }
+.battery-tag[data-progress="11"]::before { width: 11%; }
+.battery-tag[data-progress="12"]::before { width: 12%; }
+.battery-tag[data-progress="13"]::before { width: 13%; }
+.battery-tag[data-progress="14"]::before { width: 14%; }
+.battery-tag[data-progress="15"]::before { width: 15%; }
+.battery-tag[data-progress="16"]::before { width: 16%; }
+.battery-tag[data-progress="17"]::before { width: 17%; }
+.battery-tag[data-progress="18"]::before { width: 18%; }
+.battery-tag[data-progress="19"]::before { width: 19%; }
+.battery-tag[data-progress="20"]::before { width: 20%; }
+.battery-tag[data-progress="21"]::before { width: 21%; }
+.battery-tag[data-progress="22"]::before { width: 22%; }
+.battery-tag[data-progress="23"]::before { width: 23%; }
+.battery-tag[data-progress="24"]::before { width: 24%; }
+.battery-tag[data-progress="25"]::before { width: 25%; }
+.battery-tag[data-progress="26"]::before { width: 26%; }
+.battery-tag[data-progress="27"]::before { width: 27%; }
+.battery-tag[data-progress="28"]::before { width: 28%; }
+.battery-tag[data-progress="29"]::before { width: 29%; }
+.battery-tag[data-progress="30"]::before { width: 30%; }
+.battery-tag[data-progress="31"]::before { width: 31%; }
+.battery-tag[data-progress="32"]::before { width: 32%; }
+.battery-tag[data-progress="33"]::before { width: 33%; }
+.battery-tag[data-progress="34"]::before { width: 34%; }
+.battery-tag[data-progress="35"]::before { width: 35%; }
+.battery-tag[data-progress="36"]::before { width: 36%; }
+.battery-tag[data-progress="37"]::before { width: 37%; }
+.battery-tag[data-progress="38"]::before { width: 38%; }
+.battery-tag[data-progress="39"]::before { width: 39%; }
+.battery-tag[data-progress="40"]::before { width: 40%; }
+.battery-tag[data-progress="41"]::before { width: 41%; }
+.battery-tag[data-progress="42"]::before { width: 42%; }
+.battery-tag[data-progress="43"]::before { width: 43%; }
+.battery-tag[data-progress="44"]::before { width: 44%; }
+.battery-tag[data-progress="45"]::before { width: 45%; }
+.battery-tag[data-progress="46"]::before { width: 46%; }
+.battery-tag[data-progress="47"]::before { width: 47%; }
+.battery-tag[data-progress="48"]::before { width: 48%; }
+.battery-tag[data-progress="49"]::before { width: 49%; }
+.battery-tag[data-progress="50"]::before { width: 50%; }
+.battery-tag[data-progress="51"]::before { width: 51%; }
+.battery-tag[data-progress="52"]::before { width: 52%; }
+.battery-tag[data-progress="53"]::before { width: 53%; }
+.battery-tag[data-progress="54"]::before { width: 54%; }
+.battery-tag[data-progress="55"]::before { width: 55%; }
+.battery-tag[data-progress="56"]::before { width: 56%; }
+.battery-tag[data-progress="57"]::before { width: 57%; }
+.battery-tag[data-progress="58"]::before { width: 58%; }
+.battery-tag[data-progress="59"]::before { width: 59%; }
+.battery-tag[data-progress="60"]::before { width: 60%; }
+.battery-tag[data-progress="61"]::before { width: 61%; }
+.battery-tag[data-progress="62"]::before { width: 62%; }
+.battery-tag[data-progress="63"]::before { width: 63%; }
+.battery-tag[data-progress="64"]::before { width: 64%; }
+.battery-tag[data-progress="65"]::before { width: 65%; }
+.battery-tag[data-progress="66"]::before { width: 66%; }
+.battery-tag[data-progress="67"]::before { width: 67%; }
+.battery-tag[data-progress="68"]::before { width: 68%; }
+.battery-tag[data-progress="69"]::before { width: 69%; }
+.battery-tag[data-progress="70"]::before { width: 70%; }
+.battery-tag[data-progress="71"]::before { width: 71%; }
+.battery-tag[data-progress="72"]::before { width: 72%; }
+.battery-tag[data-progress="73"]::before { width: 73%; }
+.battery-tag[data-progress="74"]::before { width: 74%; }
+.battery-tag[data-progress="75"]::before { width: 75%; }
+.battery-tag[data-progress="76"]::before { width: 76%; }
+.battery-tag[data-progress="77"]::before { width: 77%; }
+.battery-tag[data-progress="78"]::before { width: 78%; }
+.battery-tag[data-progress="79"]::before { width: 79%; }
+.battery-tag[data-progress="80"]::before { width: 80%; }
+.battery-tag[data-progress="81"]::before { width: 81%; }
+.battery-tag[data-progress="82"]::before { width: 82%; }
+.battery-tag[data-progress="83"]::before { width: 83%; }
+.battery-tag[data-progress="84"]::before { width: 84%; }
+.battery-tag[data-progress="85"]::before { width: 85%; }
+.battery-tag[data-progress="86"]::before { width: 86%; }
+.battery-tag[data-progress="87"]::before { width: 87%; }
+.battery-tag[data-progress="88"]::before { width: 88%; }
+.battery-tag[data-progress="89"]::before { width: 89%; }
+.battery-tag[data-progress="90"]::before { width: 90%; }
+.battery-tag[data-progress="91"]::before { width: 91%; }
+.battery-tag[data-progress="92"]::before { width: 92%; }
+.battery-tag[data-progress="93"]::before { width: 93%; }
+.battery-tag[data-progress="94"]::before { width: 94%; }
+.battery-tag[data-progress="95"]::before { width: 95%; }
+.battery-tag[data-progress="96"]::before { width: 96%; }
+.battery-tag[data-progress="97"]::before { width: 97%; }
+.battery-tag[data-progress="98"]::before { width: 98%; }
+.battery-tag[data-progress="99"]::before { width: 99%; }
+.battery-tag[data-progress="100"]::before { width: 100%; }
+
+.time-tag {
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fcdcd 100%);
+    color: #2d5a3d !important;
+}
+
+.capacity-tag {
+    font-weight: 600;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.capacity-tag.capacity-unknown {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    color: #ffffff !important;
+}
+
+.capacity-tag.capacity-small {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.capacity-tag.capacity-medium {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.capacity-tag.capacity-large {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.capacity-tag.capacity-xlarge {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.port-status {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.port-status.active {
+    background: rgba(0, 245, 255, 0.2);
+    color: #00f5ff;
+}
+
+.port-status.full {
+    background: rgba(0, 255, 144, 0.2);
+    color: #00FF90;
+}
+
+.port-status.idle {
+    background: rgba(85, 85, 85, 0.3);
+    color: #aaa;
+}
+
+.port-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.port-metric {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.port-metric .metric-label {
+    display: block;
+    font-size: 8px;
+    color: #aaa;
+    font-weight: 500;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.port-metric .metric-value {
+    display: block;
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* 响应式设计 - 手机端优化 */
+@media (max-width: 1024px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        height: auto;
+        padding: 0;
+    }
+    
+    .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .port-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* 平板端布局调整 */
+    .left-column, .middle-column, .right-panel {
+        width: 100%;
+    }
+    
+    /* Fix for tablet alignment: override max-width constraints from specific selectors */
+    .reallyvison-card,
+    .container:not(.compact-mode) .reallyvison-card,
+    .container.compact-mode .reallyvison-card {
+        height: 300px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .reallyvison {
+        width: 200px;
+        height: 267px;
+        background-size: 94px 168px;
+        background-position: 53px 40px;
+        margin: 0 auto;
+    }
+    
+    .charging-indicator {
+        width: 94px;
+        height: 168px;
+        background-size: 94px 168px;
+        left: 53px;
+        top: 40px;
+    }
+    
+    /* 平板端线材尺寸调整 */
+    .cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-kutaike {
+        width: 76px;
+        height: 34px;
+    }
+    
+    .cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple {
+        width: 18px;
+        height: 43px;
+    }
+    
+    .cable-usb {
+        width: 76px;
+        height: 38px;
+    }
+    
+    /* 平板端端口位置调整 */
+    .cable-port-0 { left: 10px; top: 114px; }
+    .cable-port-1 { left: 10px; top: 141px; }
+    .cable-port-2 { left: 10px; top: 168px; }
+    .cable-port-3 { left: 77px; top: 198px; }
+    .cable-port-usb { left: 10px; top: 76px; }
+}
+
+/* 手机端专用样式 */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .container {
+        padding: 8px;
+        max-width: 100%;
+    }
+
+    /* 手机端头部优化 - 单行布局 */
+    .header {
+        padding: 10px 14px;
+        margin-bottom: 12px;
+    }
+
+    .header-content {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+    }
+
+    .title {
+        font-size: 14px;
+        width: auto;
+        text-align: left;
+        margin: 0;
+        white-space: nowrap;
+    }
+    
+    .header-layout-toggle {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 85px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+
+    .toggle-slider {
+        width: 38px;
+        height: 20px;
+    }
+
+    .header-layout-toggle.compact-active .toggle-slider {
+        transform: translateX(43px);
+    }
+
+    .toggle-labels {
+        padding: 0 8px;
+    }
+
+    .toggle-label {
+        font-size: 11px;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .settings-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .status-indicator {
+        font-size: 11px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* 手机端主布局 - 垂直堆叠 */
+    .main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: auto;
+        min-height: calc(100vh - 140px);
+    }
+    
+    /* 手机端模块化卡片样式 */
+    .mobile-module {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-module:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .mobile-module h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 8px;
+    }
+    
+    /* 手机端指标卡片 */
+    .left-column {
+        order: 1;
+    }
+    
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    
+    .metric-card {
+        min-height: 70px;
+        height: auto;
+        padding: 12px;
+        flex-direction: column;
+        text-align: center;
+        gap: 4px;
+    }
+    
+    .metric-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+    
+    .metric-content h3 {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+    
+    .metric-value {
+        font-size: 14px;
+    }
+    
+    .metric-change {
+        font-size: 9px;
+        padding: 1px 3px;
+        min-width: 25px;
+    }
+    
+    /* 手机端3D视图 */
+    .middle-column {
+        order: 2;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .reallyvison-card {
+        height: 320px;
+        padding: 12px;
+        position: relative;
+        z-index: 10;
+        overflow: visible;
+    }
+    
+    .reallyvison-header {
+        margin-bottom: 12px;
+    }
+    
+    .reallyvison-header h3 {
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    
+    .toggle-buttons {
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .rotation-toggle, .layout-toggle {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .reallyvison {
+        width: 160px;
+        height: 213px;
+        background-size: 75px 134px;
+        background-position: 42px 32px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 5;
+        overflow: visible;
+    }
+    
+    .charging-indicator {
+        width: 75px;
+        height: 134px;
+        background-size: 75px 134px;
+        left: 42px;
+        top: 32px;
+        z-index: 3;
+    }
+    
+    /* 手机端线材尺寸调整 */
+    .cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-kutaike {
+        width: 60px;
+        height: 27px;
+    }
+    
+    .cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple {
+        width: 14px;
+        height: 34px;
+    }
+    
+    .cable-usb {
+        width: 60px;
+        height: 30px;
+    }
+    
+    /* 手机端端口位置调整 */
+    .cable-port-0 { left: 8px; top: 91px; }
+    .cable-port-1 { left: 8px; top: 113px; }
+    .cable-port-2 { left: 8px; top: 134px; }
+    .cable-port-3 { left: 61px; top: 158px; }
+    .cable-port-usb { left: 8px; top: 60px; }
+    
+    /* 手机端简洁模式实时数据 */
+    .compact-metrics {
+        position: static;
+        transform: none !important;
+        margin-top: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 12px;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        z-index: 1;
+    }
+    
+    .container.compact-mode .compact-metrics {
+        display: grid !important;
+    }
+    
+    .compact-metric {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+    
+    .compact-label {
+        font-size: 10px;
+    }
+    
+    .compact-value {
+        font-size: 14px;
+        font-weight: 700;
+    }
+    
+    /* 手机端充电桩状态 */
+    .status-section {
+        order: 3;
+    }
+    
+    .status-card {
+        padding: 16px;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .status-item {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .status-icon {
+        font-size: 18px;
+        width: 28px;
+    }
+    
+    .status-label {
+        font-size: 11px;
+    }
+    
+    .status-value {
+        font-size: 13px;
+    }
+    
+    /* 手机端图表区域 */
+    .chart-section {
+        order: 4;
+        min-height: 250px;
+    }
+    
+    .chart-card {
+        padding: 16px;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    .chart-mode-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .chart-mode-btn, .wake-lock-btn {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+    
+    #powerChart {
+        min-height: 150px;
+        max-height: 180px;
+    }
+    
+    /* 手机端端口详情 - 2x2网格布局 */
+    .right-panel {
+        order: 5;
+        padding: 0;
+    }
+    
+    .ports-header {
+        margin-bottom: 12px;
+    }
+    
+    .ports-header h3 {
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .refresh-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .ports-container {
+        padding: 12px;
+        border-radius: 16px;
+        max-height: none;
+        height: auto;
+    }
+    
+    /* 手机端端口网格 - 2x2布局 */
+    .ports-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto; /* 让行高自适应内容 */
+        gap: 8px;
+        height: auto;
+    }
+    
+    .port-item {
+        margin-bottom: 0;
+        min-height: 140px; /* 确保最小高度一致 */
+    }
+    
+    .port-metrics {
+        grid-template-columns: 1fr; /* 单列显示指标 */
+        gap: 4px;
+    }
+    
+    .port-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 8px;
+    }
+    
+    .port-metric .metric-label {
+        margin-bottom: 0;
+    }
+}
+
+/* 控制面板样式 */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.control-panel {
+    background: #12121a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 650px; /* Increased width as requested */
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Modern Port Card Style */
+.modern-port-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.modern-port-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.port-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.port-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 245, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00f5ff;
+}
+
+.port-id {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+/* iOS Switch Style */
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+}
+
+.ios-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ios-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.ios-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .ios-slider {
+    background-color: #00f5ff;
+}
+
+input:focus + .ios-slider {
+    box-shadow: 0 0 1px #00f5ff;
+}
+
+input:checked + .ios-slider:before {
+    transform: translateX(20px);
+}
+
+/* Restored Settings Button Style */
+.settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 20px;
+}
+
+.settings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.modal-overlay.active .control-panel {
+    transform: translateY(0);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    background: #12121a;
+    z-index: 5;
+}
+
+.panel-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.panel-icon {
+    font-size: 24px;
+}
+
+.panel-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.close-btn {
+    background: rgba(255, 68, 68, 0.1);
+    border: none;
+    color: #ff6b6b;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+.panel-content {
+    padding: 20px;
+}
+
+.control-group {
+    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.control-group h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #00f5ff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 现代化按钮样式 */
+.modern-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.modern-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-warning-modern {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 142, 142, 0.1));
+    border-color: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.btn-warning-modern:hover {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 142, 142, 0.2));
+}
+
+.btn-secondary-modern {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.1));
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+.btn-secondary-modern:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.2));
+}
+
+.btn-icon-large {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.btn-text-large {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.btn-hint {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.button-grid-modern {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* 输入框样式 */
+.input-with-label {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.input-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.input-group-modern {
+    display: flex;
+    gap: 8px;
+}
+
+.modern-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.modern-input:focus {
+    border-color: #00f5ff;
+    background: rgba(0, 245, 255, 0.05);
+}
+
+.save-btn-modern {
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.save-btn-modern:hover {
+    background: #00ddeb;
+    transform: translateY(-1px);
+}
+
+.input-hint {
+    font-size: 10px;
+    color: #666;
+    margin-top: 8px;
+}
+
+/* 端口开关样式 */
+.modern-switches {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.port-switch-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.switch-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.switch-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.switch-status {
+    font-size: 10px;
+    color: #aaa;
+}
+
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.ios-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #00f5ff;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #00f5ff;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* 状态日志 */
+.status-log {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry {
+    color: #aaa;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 8px;
+}
+
+.log-time {
+    color: #666;
+    min-width: 60px;
+}
+
+.log-msg {
+    color: #ddd;
+}
+
+/* 粒子系统 */
+.particle-system {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.particle {
+    position: absolute;
+    background: rgba(0, 245, 255, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.8);
+}
+
+/* 呼吸光环 */
+.breathing-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 245, 255, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+    animation: breathe 4s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+/* 能量波纹 */
+.energy-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 245, 255, 0.5);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.energy-ripple:nth-child(1) { animation: ripple 3s linear infinite; }
+.energy-ripple:nth-child(2) { animation: ripple 3s linear infinite 1s; }
+.energy-ripple:nth-child(3) { animation: ripple 3s linear infinite 2s; }
+
+@keyframes ripple {
+    0% { width: 50px; height: 50px; opacity: 0.8; border-width: 4px; }
+    100% { width: 300px; height: 300px; opacity: 0; border-width: 0px; }
+}
+
+/* 电力信息浮窗 */
+.power-info {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    color: white;
+    font-size: 12px;
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.power-info-0 { left: 110px; top: 135px; }
+.power-info-1 { left: 110px; top: 168px; }
+.power-info-2 { left: 110px; top: 200px; }
+.power-info-3 { left: 130px; top: 235px; }
+.power-info-4 { left: 110px; top: 90px; } /* USB端口信息位置 */
+
+/* 功率负载条样式 */
+.power-load-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.power-load-bar {
+    height: 100%;
+    background: #2ed573;
+    width: 0%;
+    transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+/* 折叠面板样式 */
+.collapsible {
+    transition: all 0.3s ease;
+}
+
+.collapsible .group-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.collapsible.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.group-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, opacity 0.3s ease, padding 0.3s ease;
+    opacity: 0;
+    padding: 0;
+}
+
+.collapsible.active .group-content {
+    max-height: 1000px;
+    opacity: 1;
+    padding-top: 16px;
+}
+
+/* 策略开关 */
+.strategy-toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.strategy-toggle-label {
+    font-size: 14px;
+    color: #fff;
+}
+
+.strategy-toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.strategy-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.strategy-toggle .slider {
+    background-color: #ccc;
+    border-radius: 34px;
+}
+
+.strategy-toggle input:checked + .slider {
+    background-color: #ff6b6b; /* 温控模式用红色 */
+}
+
+.toggle-info {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+}
+
+/* 通用功能按钮 */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.action-btn.btn-primary {
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    font-weight: 600;
+}
+
+.action-btn.btn-danger {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff6b6b;
+    border-color: rgba(255, 68, 68, 0.3);
+}
+
+.action-btn.btn-danger:hover {
+    background: rgba(255, 68, 68, 0.3);
+}
+
+/* 亮度滑块 */
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.brightness-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.brightness-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #00f5ff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+
+/* 输入行 */
+.input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.token-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 12px;
+    outline: none;
+}
+
+/* 协议选择网格 */
+.protocol-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.protocol-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #ddd;
+}
+
+/* 弹窗样式优化 */
+.feature-panel {
+    max-width: 400px;
+}
+
+.scan-btn-modern, .disconnect-btn-modern {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.scan-btn-modern:hover, .disconnect-btn-modern:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-badge {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* 简洁模式下的特定样式 */
+.header-layout-toggle {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2px;
+    cursor: pointer;
+    position: relative;
+    width: 100px;
+    height: 28px;
+    overflow: hidden;
+}
+
+.toggle-slider {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 48px;
+    background: linear-gradient(135deg, #00f5ff, #00b8d4);
+    border-radius: 16px;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    z-index: 1;
+}
+
+.header-layout-toggle.compact-active .toggle-slider {
+    transform: translateX(48px);
+}
+
+.toggle-labels {
+    display: flex;
+    width: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+.toggle-label {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 24px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.3s;
+}
+
+.toggle-label.active {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 简洁模式布局 */
+.container.compact-mode .main-layout {
+    grid-template-columns: 1fr 280px; /* 左侧主要区域，右侧端口列表 */
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    height: calc(100vh - 80px);
+}
+
+.container.compact-mode .left-column {
+    display: none; /* 隐藏所有图表和详细指标 */
+}
+
+.container.compact-mode .middle-column {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.container.compact-mode .right-panel {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    height: 100%;
+    padding: 0;
+}
+
+.container.compact-mode .reallyvison-card {
+    width: 100%;
+    height: 100%;
+    max-width: 600px; /* 限制最大宽度 */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.container.compact-mode .reallyvison-header {
+    display: none; /* 隐藏标题 */
+}
+
+.container.compact-mode .reallyvison {
+    width: 476px; /* 放大2倍 */
+    height: 634px;
+    background-size: 224px 400px;
+    background-position: 126px 94px;
+    transform: scale(1.0); /* 默认不缩放，因为已经放大尺寸了 */
+}
+
+/* 简洁模式下的充电指示器放大 */
+.container.compact-mode .charging-indicator {
+    width: 224px;
+    height: 400px;
+    background-size: 224px 400px;
+    left: 126px;
+    top: 94px;
+}
+
+/* 简洁模式下的端口位置调整 (基于2倍放大) */
+.container.compact-mode .cable-port-0 { left: 24px; top: 270px; }
+.container.compact-mode .cable-port-1 { left: 24px; top: 336px; }
+.container.compact-mode .cable-port-2 { left: 24px; top: 400px; }
+.container.compact-mode .cable-port-3 { left: 184px; top: 470px; }
+.container.compact-mode .cable-port-usb { left: 24px; top: 180px; }
+
+/* 简洁模式下的电力信息浮窗位置调整 */
+.container.compact-mode .power-info-0 { left: 220px; top: 270px; font-size: 14px; }
+.container.compact-mode .power-info-1 { left: 220px; top: 336px; font-size: 14px; }
+.container.compact-mode .power-info-2 { left: 220px; top: 400px; font-size: 14px; }
+.container.compact-mode .power-info-3 { left: 260px; top: 470px; font-size: 14px; }
+.container.compact-mode .power-info-4 { left: 220px; top: 180px; font-size: 14px; }
+
+/* 简洁模式下的状态卡片隐藏 */
+.container.compact-mode .status-section {
+    display: none;
+}
+
+/* 简洁模式下的实时数据简报 */
+.compact-metrics {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compact-metric {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.compact-label {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.compact-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* 移动端简洁模式适配 */
+@media (max-width: 768px) {
+    .container.compact-mode .main-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+    }
+    
+    .container.compact-mode .middle-column {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    
+    .container.compact-mode .right-panel {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    
+    .container.compact-mode .reallyvison {
+        width: 300px;
+        height: 400px;
+        background-size: 141px 252px;
+        background-position: 79px 59px;
+    }
+    
+    .container.compact-mode .charging-indicator {
+        width: 141px;
+        height: 252px;
+        background-size: 141px 252px;
+        left: 79px;
+        top: 59px;
+    }
+    
+    /* 移动端简洁模式线材尺寸 */
+    .container.compact-mode .cable-putong,
+    .container.compact-mode .cable-xili,
+    .container.compact-mode .cable-xili2,
+    .container.compact-mode .cable-yunduo,
+    .container.compact-mode .cable-okokok,
+    .container.compact-mode .cable-meizu,
+    .container.compact-mode .cable-kutaike {
+        width: 113px;
+        height: 50px;
+    }
+    
+    .container.compact-mode .cable-land-putong,
+    .container.compact-mode .cable-land-yunduo,
+    .container.compact-mode .cable-land-xili2,
+    .container.compact-mode .cable-land-okokok,
+    .container.compact-mode .cable-land-meizu,
+    .container.compact-mode .cable-land-kutaike,
+    .container.compact-mode .cable-land-apple {
+        width: 26px;
+        height: 64px;
+    }
+    
+    .container.compact-mode .cable-usb {
+        width: 113px;
+        height: 56px;
+    }
+    
+    /* 移动端简洁模式端口位置 */
+    .container.compact-mode .cable-port-0 { left: 15px; top: 170px; }
+    .container.compact-mode .cable-port-1 { left: 15px; top: 211px; }
+    .container.compact-mode .cable-port-2 { left: 15px; top: 252px; }
+    .container.compact-mode .cable-port-3 { left: 115px; top: 296px; }
+    .container.compact-mode .cable-port-usb { left: 15px; top: 113px; }
+}
+
+/* New Styles for OTA and Auth (from previous task) */
+.text-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    width: 100%;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+}
+
+.ota-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.file-upload-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.file-input {
+    flex: 1;
+    color: var(--text-secondary);
+    font-size: 12px;
+    min-width: 200px;
+}
+
+.file-input::file-selector-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    margin-right: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.file-input::file-selector-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.progress-container {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--accent-cyan);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.status-message {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-height: 18px;
+}
+
+.online-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent-green);
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--accent-green);
+}
+
+.offline-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent-red);
+    margin-right: 6px;
+}
+/* 新增 Cluster 组件样式 */
+.cluster-card {
+    background: rgba(16, 20, 30, 0.95);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.cluster-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #00f5ff, #7000ff);
+}
+
+.cluster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.cluster-header h3 {
+    font-size: 14px;
+    color: #fff;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cluster-badge {
+    font-size: 10px;
+    background: rgba(0, 245, 255, 0.1);
+    color: #00f5ff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 245, 255, 0.2);
+}
+
+.cluster-overview {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cluster-big-stat {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cluster-big-stat .label {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.cluster-big-stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Inter', monospace;
+    letter-spacing: -1px;
+}
+
+.cluster-big-stat .unit {
+    font-size: 12px;
+    color: #666;
+    margin-left: 2px;
+}
+
+/* 网关矩阵样式 */
+.gateway-matrix {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.matrix-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #333;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.matrix-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.matrix-item.online {
+    border-left-color: #00ff88;
+}
+
+.matrix-item.offline {
+    border-left-color: #ff4444;
+    opacity: 0.6;
+}
+
+.matrix-item.selected {
+    background: rgba(0, 245, 255, 0.1);
+    border-left-color: #00f5ff;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+}
+
+.matrix-name {
+    font-size: 12px;
+    color: #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.matrix-val {
+    font-size: 11px;
+    color: #00f5ff;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.metrics-header {
+    margin: 12px 0 8px 0;
+}
+
+.metrics-header h3 {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* 适配移动端 */
+@media (max-width: 768px) {
+    .gateway-matrix {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* --- Restored Settings Button Style --- */
+.settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 20px;
+    margin-left: 12px;
+}
+
+.settings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* --- New Bluetooth Connection Hub Styles --- */
+
+/* Modern Group Header - Enhanced */
+.group-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-icon {
+    font-size: 18px;
+}
+
+.group-header-modern h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    font-weight: 600;
+}
+
+.status-badge.connected {
+    background: rgba(0, 245, 255, 0.2);
+    color: #00f5ff;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+}
+
+.status-badge.disconnected {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff6b6b;
+}
+
+/* Connection Card */
+.connection-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.conn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.conn-label {
+    font-size: 10px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.conn-value {
+    font-size: 13px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.conn-arrow {
+    font-size: 10px;
+    color: #444;
+    background: #111;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #333;
+}
+
+/* Scan Section */
+.scan-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.scan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.scan-title {
+    font-size: 12px;
+    color: #aaa;
+}
+
+/* Device List Container */
+.device-list-container-modern {
+    min-height: 80px;
+    max-height: 150px;
+    overflow-y: auto;
+    position: relative;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.device-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.device-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.device-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.device-item.empty {
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    color: #666;
+    cursor: default;
+}
+
+.empty-icon {
+    font-size: 24px;
+    opacity: 0.5;
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-name {
+    font-size: 13px;
+    color: #fff;
+    font-weight: 500;
+}
+
+.device-rssi {
+    font-size: 10px;
+    color: #888;
+}
+
+.connect-btn {
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.connect-btn:hover {
+    background: #00ddeb;
+}
+
+/* Radar Overlay */
+.radar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 8px;
+}
+
+.radar-spinner {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(0, 245, 255, 0.3);
+    border-top: 2px solid #00f5ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 8px;
+}
+
+.radar-text {
+    color: #00f5ff;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Scan Button */
+.scan-btn-modern {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+
+.scan-btn-modern:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}

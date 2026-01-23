@@ -1,3 +1,9 @@
 [submodule "hardware/esp32/IonBridge-main"]
 	path = hardware/esp32/IonBridge-main
 	url = https://github.com/ifanrx/IonBridge.git
+[submodule "software/charging-station-webs"]
+	path = software/charging-station-webs
+	url = https://github.com/LELE666999/Charging-Station-WebS.git
+[submodule "software/cp02-monitor-webs"]
+	path = software/cp02-monitor-webs
+	url = https://github.com/ypwhs/cp02_monitor.git

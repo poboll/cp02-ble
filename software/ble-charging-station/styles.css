@@ -1,0 +1,5130 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #000000;
+    min-height: 100vh;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* 针对特定滚动容器的强制隐藏 */
+.ports-container,
+.control-panel,
+.device-list-container,
+.status-log,
+.panel-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.ports-container::-webkit-scrollbar,
+.control-panel::-webkit-scrollbar,
+.device-list-container::-webkit-scrollbar,
+.status-log::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar {
+    display: none !important;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+}
+
+/* 头部样式 */
+.header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.header-left-group {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* Title and toggle distance */
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    margin: 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #00f5ff;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.disconnected {
+    background: #ff6b6b;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* iPad三列布局 */
+.main-layout {
+    display: grid;
+    grid-template-columns: 280px 280px 1fr;
+    gap: 16px;
+    height: calc(100vh - 120px);
+    padding: 0 16px;
+}
+
+/* 左侧列 - 指标卡片和图表 */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 中间列 - 3D视图和充电桩状态 */
+.middle-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 右侧列 - 端口信息 */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* 右侧面板 */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+}
+
+/* 实时功率区域 */
+.power-section {
+    flex-shrink: 0;
+}
+
+.metrics-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.05);
+    /* backdrop-filter: blur(20px); */
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    min-height: 60px;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+}
+
+.power-card {
+    --card-color: #ff6b6b;
+    --card-color-light: #ff8e8e;
+}
+
+.voltage-card {
+    --card-color: #00f5ff;
+    --card-color-light: #4dd0e1;
+}
+
+.current-card {
+    --card-color: #3b82f6;
+    --card-color-light: #60a5fa;
+}
+
+.wifi-card {
+    --card-color: #10b981;
+    --card-color-light: #34d399;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.metric-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.metric-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-content h3 {
+    font-size: 9px;
+    font-weight: 500;
+    color: #aaa;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.metric-change {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+    min-width: 30px;
+    text-align: center;
+}
+
+.metric-change.positive {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.metric-change.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.metric-change.neutral {
+    background: rgba(107, 114, 128, 0.2);
+    color: #6b7280;
+}
+
+/* 图表区域 */
+.chart-section {
+    flex: 1;
+    min-height: 300px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.chart-mode-buttons {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.chart-mode-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    color: #aaa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.chart-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.chart-mode-btn.active {
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+}
+
+.chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.wake-lock-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+    justify-content: center;
+}
+
+.wake-lock-btn .wake-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.wake-lock-btn .wake-text {
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.wake-lock-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.wake-lock-btn.active {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.wake-lock-btn.active .wake-icon {
+    content: '☀️';
+}
+
+#powerChart {
+    flex: 1;
+    min-height: 180px;
+    max-height: 200px;
+}
+
+/* 状态区域 */
+.status-section {
+    flex-shrink: 0;
+}
+
+.status-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-icon {
+    font-size: 20px;
+    width: 32px;
+    text-align: center;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-label {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.status-value {
+    display: block;
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* 端口区域 */
+.ports-section {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ports-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-left: 0.5em;
+}
+
+.refresh-btn {
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(0, 245, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 245, 255, 0.4);
+}
+
+.refresh-icon {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.refresh-btn.loading .refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 端口容器 */
+.ports-container {
+    flex: 1;
+    background: rgba(20, 20, 25, 0.95); /* 更深的不透明背景 */
+    /* backdrop-filter: blur(20px); 移除毛玻璃以提升性能 */
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-y: visible; /* 修复：不再独立滚动，允许页面整体滚动 */
+    height: auto;
+    /* 开启硬件加速 */
+    transform: translateZ(0);
+}
+
+/* 简洁模式下端口容器优化 - 适配不同设备高度 */
+.container.compact-mode .ports-container {
+    background: rgba(20, 20, 25, 0.95);
+    /* backdrop-filter: blur(20px); */
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+    padding: 20px 20px 100px 20px; /* 减少底部留白 */
+    overflow-y: visible; /* 修复滚动：改为visible让页面滚动 */
+    max-height: none;
+    min-height: 800px;
+    height: auto;
+    flex: 1;
+    scroll-behavior: smooth;
+}
+
+/* 简洁模式下端口网格额外底部空间 */
+.container.compact-mode .ports-grid {
+    padding-bottom: 120px;
+    min-height: 100%;
+}
+
+.ports-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.port-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 3px solid #333;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+}
+
+.port-item.active {
+    border-left-color: #00f5ff;
+    background: rgba(0, 245, 255, 0.05);
+    border-color: rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 24px rgba(0, 245, 255, 0.6);
+}
+
+.port-item.full {
+    border-left-color: #00FF90;
+    background: rgba(0, 255, 144, 0.05);
+    border-color: rgba(0, 255, 144, 0.2);
+    box-shadow: 0 0 12px rgba(0, 255, 144, 0.2);
+}
+
+.port-item.idle {
+    border-left-color: #555;
+}
+
+.port-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.port-title {
+    flex: 1;
+}
+
+.port-id {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.manufacturer-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1);
+    flex-shrink: 0;
+}
+
+.qualcomm-badge {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+/* 左侧面板新布局 */
+.left-panel {
+    display: flex;
+    gap: 16px;
+}
+
+.left-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 指标卡片改为垂直排列 */
+.metrics-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metric-card {
+    width: 100%;
+}
+
+/* 3D充电站可视化区域 */
+.reallyvison-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 370px;
+    overflow: visible;
+}
+
+.reallyvison-header {
+    margin-bottom: 16px;
+}
+
+.reallyvison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reallyvison-header h3 {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* 切换按钮容器 */
+.toggle-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* 自定义旋转切换按钮 */
+.rotation-toggle, .layout-toggle {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rotation-toggle .toggle-text, .layout-toggle .toggle-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.rotation-toggle:hover, .layout-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.rotation-toggle.active {
+    background: rgba(38, 255, 255, 0.2);
+    border-color: rgba(38, 255, 255, 0.4);
+}
+
+.rotation-toggle.active .toggle-text {
+    color: #26FFFF;
+}
+
+.layout-toggle.active {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.4);
+}
+
+.layout-toggle.active .toggle-text {
+    color: #ff6b6b;
+}
+
+.reallyvison {
+    width: 238px;
+    height: 317px;
+    position: relative;
+    background-image: url('chongdianzhan.png');
+    background-size: 112px 200px;
+    background-repeat: no-repeat;
+    background-position: 63px 47px;
+    border-radius: 8px;
+    overflow: visible;
+    margin: 0 auto;
+    opacity: 0.6; /* 默认透明度60%（无端口充电） */
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+}
+
+/* 旋转状态 - 逆时针90度 */
+.reallyvison.rotated {
+    transform: rotate(-90deg);
+}
+
+/* 有端口充电时的透明度 */
+.reallyvison.charging {
+    opacity: 1.0; /* 充电时透明度100%（完全不透明） */
+}
+
+/* 充电状态指示图层 - 在背景图上方 */
+.charging-indicator {
+    position: absolute;
+    width: 112px;
+    height: 200px;
+    background-size: 112px 200px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    z-index: 3;
+    left: 63px;
+    top: 47px;
+    display: none;
+    transition: all 0.5s ease;
+}
+
+/* 端口4充电指示图始终在背景图后面 */
+.charging-indicator.charging-port-4 {
+    z-index: -1 !important;
+}
+
+/* 横屏模式下端口4充电指示图仍保持在背景图后面 */
+.reallyvison.rotated .charging-indicator.charging-port-4 {
+    z-index: -1 !important;
+}
+
+/* 端口0-3充电指示图动画 - 从左往右滑入 */
+.charging-indicator.slide-in-left {
+    animation: slideInFromLeft 0.5s ease forwards;
+}
+
+.charging-indicator.slide-out-right {
+    animation: slideOutToRight 0.5s ease forwards;
+}
+
+/* 端口4充电指示图动画 - 从下往上滑入 */
+.charging-indicator.slide-in-up {
+    animation: slideInFromBottom 0.5s ease forwards;
+}
+
+.charging-indicator.slide-out-down {
+    animation: slideOutToBottom 0.5s ease forwards;
+}
+
+/* 动画关键帧 */
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromBottom {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToRight {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInFromBottom {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToBottom {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* 各端口充电指示图 */
+.charging-port-0 {
+    background-image: url('000.png');
+}
+
+.charging-port-1 {
+    background-image: url('001.png');
+}
+
+.charging-port-2 {
+    background-image: url('002.png');
+}
+
+.charging-port-3 {
+    background-image: url('003.png');
+}
+
+.charging-port-4 {
+    background-image: url('004.png');
+}
+
+/* 移除不需要的背景图片样式，现在使用CSS背景 */
+
+.cable-image {
+    position: absolute;
+    z-index: 2;
+    max-width: none;
+    height: auto;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.cable-image.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 线材位置样式 */
+.cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-apple, .cable-kutaike, .cable-huaxian {
+    position: absolute;
+    z-index: 2;
+    width: 90px;
+    height: 40px;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-putong.show, .cable-xili.show, .cable-xili2.show, .cable-yunduo.show, .cable-okokok.show, .cable-meizu.show, .cable-apple.show, .cable-kutaike.show, .cable-huaxian.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 简洁模式下线材尺寸调整 - 统一管理 */
+.container.compact-mode .cable-putong,
+.container.compact-mode .cable-xili,
+.container.compact-mode .cable-xili2,
+.container.compact-mode .cable-yunduo,
+.container.compact-mode .cable-okokok,
+.container.compact-mode .cable-meizu {
+    width: 180px;
+    height: 80px;
+}
+
+/* 简洁模式下特殊线材保持原始比例，防止拉伸变形 */
+.container.compact-mode .cable-apple,
+.container.compact-mode .cable-kutaike,
+.container.compact-mode .cable-huaxian {
+    width: 180px;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: auto;
+}
+
+/* 端口4线材样式 - 尺寸21x51 */
+.cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple, .cable-land-huaxian {
+    position: absolute;
+    z-index: -1; /* 在背景图下方 */
+    width: 21px;
+    height: 51px;
+    transition: all 0.5s ease;
+    transform: translateY(100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-land-putong.show, .cable-land-yunduo.show, .cable-land-xili2.show, .cable-land-okokok.show, .cable-land-meizu.show, .cable-land-kutaike.show, .cable-land-apple.show, .cable-land-huaxian.show {
+    transform: translateY(0);
+    opacity: 1;
+    animation: slideInFromBottom 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 横向模式下端口4仍保持在背景图下方 */
+.reallyvison.rotated .cable-land-putong,
+.reallyvison.rotated .cable-land-yunduo,
+.reallyvison.rotated .cable-land-xili2,
+.reallyvison.rotated .cable-land-okokok,
+.reallyvison.rotated .cable-land-meizu,
+.reallyvison.rotated .cable-land-kutaike,
+.reallyvison.rotated .cable-land-apple {
+    z-index: -1 !important;
+}
+
+/* 端口4线材在所有模式下都保持在背景图下方 */
+.cable-land-putong,
+.cable-land-yunduo,
+.cable-land-xili2,
+.cable-land-kutaike,
+.cable-land-apple {
+    z-index: -1 !important;
+}
+
+/* 端口0 USB检测样式 - 尺寸90x45 */
+.cable-usb {
+    position: absolute;
+    z-index: 2;
+    width: 90px;
+    height: 45px;
+    transition: all 0.5s ease;
+    transform: translateX(-100%);
+    opacity: 0;
+    display: none;
+}
+
+.cable-usb.show {
+    transform: translateX(0);
+    opacity: 1;
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 端口位置映射 - 基于112x200区域的精确坐标 */
+/* 端口1位置 (12, 135) */
+.cable-port-0 {
+    left: 12px;
+    top: 135px;
+}
+
+/* 端口2位置 (12, 168) */
+.cable-port-1 {
+    left: 12px;
+    top: 168px;
+}
+
+/* 端口3位置 (12, 200) */
+.cable-port-2 {
+    left: 12px;
+    top: 200px;
+}
+
+/* 端口4位置 (92, 235) - 在背景图下方 */
+.cable-port-3 {
+    left: 92px;
+    top: 235px;
+    z-index: -1; /* 在背景图下面 */
+}
+
+/* 端口0位置 (12, 90) - USB设备检测 */
+.cable-port-usb {
+    left: 12px;
+    top: 90px;
+    z-index: 2;
+}
+
+/* 端口线材位置 - 保持原始坐标 */
+#cable-port-1 {
+    left: 29px;
+    top: 339px;
+}
+
+#cable-port-2 {
+    left: 29px;
+    top: 419px;
+}
+
+#cable-port-3 {
+    left: 29px;
+    top: 499px;
+}
+
+.port-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.port-tag {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.device-tag {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.device-tag.qualcomm-device {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+}
+
+/* 飞智B8X散热器设备标签 */
+.device-tag.feizhi-device {
+    background: linear-gradient(135deg, #00f5ff 0%, #ff6b6b 50%, #8b5cf6 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 12px rgba(0, 245, 255, 0.4);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    animation: feizhiTagGlow 3s ease-in-out infinite;
+}
+
+@keyframes feizhiTagGlow {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.6);
+        transform: scale(1.05);
+    }
+}
+
+/* 飞智B8X散热器序列帧动画 */
+.feizhi-animation {
+    animation: feizhiGlow 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.6));
+}
+
+@keyframes feizhiGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.4)) brightness(1);
+        transform: scale(1);
+    }
+    25% {
+        filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.6)) brightness(1.2);
+        transform: scale(1.1);
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8)) brightness(1.3);
+        transform: scale(1.05);
+    }
+    75% {
+        filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.6)) brightness(1.1);
+        transform: scale(1.08);
+    }
+}
+
+/* 飞智B8X散热器端口彩色呼吸灯光 */
+.port-item.charging.feizhi-device {
+    position: relative;
+    overflow: hidden;
+}
+
+.port-item.charging.feizhi-device::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(0, 245, 255, 0.1) 0%, 
+        rgba(255, 107, 107, 0.1) 25%, 
+        rgba(139, 92, 246, 0.1) 50%, 
+        rgba(0, 245, 255, 0.1) 75%, 
+        rgba(255, 107, 107, 0.1) 100%);
+    animation: feizhiPortGlow 4s ease-in-out infinite;
+    z-index: -1;
+    border-radius: 6px;
+}
+
+/* 端口详情区域圆角矩形背景彩色霓虹光 */
+.port-item.charging.feizhi-device .port-metrics {
+    position: relative;
+    overflow: hidden;
+}
+
+.port-item.charging.feizhi-device .port-metric {
+    position: relative;
+    z-index: 1;
+}
+
+.port-item.charging.feizhi-device .port-metrics::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        #00f5ff 0%, 
+        #ff6b6b 25%, 
+        #8b5cf6 50%, 
+        #00f5ff 75%, 
+        #ff6b6b 100%);
+    background-size: 200% 200%;
+    animation: feizhiNeonGlow 3s ease-in-out infinite;
+    z-index: 0;
+    border-radius: 8px;
+    filter: blur(8px);
+    opacity: 0.8;
+}
+
+@keyframes feizhiPortGlow {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    25% {
+        opacity: 0.6;
+        transform: scale(1.02);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+    75% {
+        opacity: 0.5;
+        transform: scale(1.03);
+    }
+}
+
+@keyframes feizhiNeonGlow {
+    0%, 100% {
+        background-position: 0% 0%;
+        opacity: 0.8;
+    }
+    25% {
+        background-position: 100% 0%;
+        opacity: 1;
+    }
+    50% {
+        background-position: 100% 100%;
+        opacity: 0.8;
+    }
+    75% {
+        background-position: 0% 100%;
+        opacity: 1;
+    }
+}
+
+.cable-tag {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.cable-tag.slimbolt {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+}
+
+.cable-tag.ok-cable {
+    background: linear-gradient(135deg, #87c7ff 0%, #a19cff 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+.cable-tag.meizu-cable {
+    background: #FF6ED8;
+    color: #101843;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 110, 216, 0.3);
+}
+
+.cable-tag.apple-official {
+    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.cable-tag.kutaike-cable {
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.cable-tag.flower-cable {
+    background: linear-gradient(45deg, #FF1493 0%, #FF1493 25%, #0080FF 25%, #0080FF 50%, #FF1493 50%, #FF1493 75%, #0080FF 75%, #0080FF 100%);
+    background-size: 8px 8px;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 20, 147, 0.4);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    animation: pixelShift 2s linear infinite;
+}
+
+@keyframes pixelShift {
+    0% { background-position: 0 0; }
+    100% { background-position: 8px 8px; }
+}
+
+/* 端口项充电背光效果 - 跟随线材标签颜色 */
+.port-item.charging.apple-official {
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6), inset 0 0 20px rgba(247, 147, 30, 0.3);
+    border: 1px solid rgba(255, 210, 63, 0.5);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.port-item.charging.kutaike-cable {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.port-item.charging.ok-cable {
+    box-shadow: 0 0 20px rgba(135, 199, 255, 0.6), inset 0 0 20px rgba(161, 156, 255, 0.3);
+    border: 1px solid rgba(135, 199, 255, 0.5);
+    background: rgba(135, 199, 255, 0.1);
+}
+
+.port-item.charging.meizu-cable {
+    box-shadow: 0 0 20px rgba(255, 110, 216, 0.6), inset 0 0 20px rgba(255, 110, 216, 0.3);
+    border: 1px solid rgba(255, 110, 216, 0.5);
+    background: rgba(255, 110, 216, 0.1);
+}
+
+.port-item.charging.slimbolt {
+    box-shadow: 0 0 20px rgba(255, 154, 86, 0.6), inset 0 0 20px rgba(255, 107, 53, 0.3);
+    border: 1px solid rgba(255, 154, 86, 0.5);
+    background: rgba(255, 154, 86, 0.1);
+}
+
+.port-item.charging.cloud-cable {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), inset 0 0 20px rgba(173, 216, 230, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.port-item.charging.kutaike-cable {
+    box-shadow: 0 0 20px rgba(53, 104, 255, 0.6), inset 0 0 20px rgba(46, 217, 255, 0.3);
+    border: 1px solid rgba(63, 255, 229, 0.5);
+    background: rgba(53, 104, 255, 0.1);
+}
+
+.port-item.charging.flower-cable {
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(0, 128, 255, 0.3);
+    border: 1px solid rgba(255, 20, 147, 0.5);
+    background: rgba(255, 20, 147, 0.1);
+    animation: flowerGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes flowerGlow {
+    0% {
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(0, 128, 255, 0.3);
+        border-color: rgba(255, 20, 147, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 25px rgba(0, 128, 255, 0.7), inset 0 0 25px rgba(255, 20, 147, 0.4);
+        border-color: rgba(0, 128, 255, 0.6);
+    }
+}
+
+.port-item.charging.default {
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.6), inset 0 0 20px rgba(0, 245, 255, 0.3);
+    border: 1px solid rgba(0, 245, 255, 0.5);
+    background: rgba(0, 245, 255, 0.1);
+}
+
+.battery-tag {
+    background: transparent;
+    border: 2px solid #1f1e29;
+    position: relative;
+    overflow: hidden;
+}
+
+.battery-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.battery-tag[data-progress="0"]::before { width: 0%; }
+.battery-tag[data-progress="1"]::before { width: 1%; }
+.battery-tag[data-progress="2"]::before { width: 2%; }
+.battery-tag[data-progress="3"]::before { width: 3%; }
+.battery-tag[data-progress="4"]::before { width: 4%; }
+.battery-tag[data-progress="5"]::before { width: 5%; }
+.battery-tag[data-progress="6"]::before { width: 6%; }
+.battery-tag[data-progress="7"]::before { width: 7%; }
+.battery-tag[data-progress="8"]::before { width: 8%; }
+.battery-tag[data-progress="9"]::before { width: 9%; }
+.battery-tag[data-progress="10"]::before { width: 10%; }
+.battery-tag[data-progress="11"]::before { width: 11%; }
+.battery-tag[data-progress="12"]::before { width: 12%; }
+.battery-tag[data-progress="13"]::before { width: 13%; }
+.battery-tag[data-progress="14"]::before { width: 14%; }
+.battery-tag[data-progress="15"]::before { width: 15%; }
+.battery-tag[data-progress="16"]::before { width: 16%; }
+.battery-tag[data-progress="17"]::before { width: 17%; }
+.battery-tag[data-progress="18"]::before { width: 18%; }
+.battery-tag[data-progress="19"]::before { width: 19%; }
+.battery-tag[data-progress="20"]::before { width: 20%; }
+.battery-tag[data-progress="21"]::before { width: 21%; }
+.battery-tag[data-progress="22"]::before { width: 22%; }
+.battery-tag[data-progress="23"]::before { width: 23%; }
+.battery-tag[data-progress="24"]::before { width: 24%; }
+.battery-tag[data-progress="25"]::before { width: 25%; }
+.battery-tag[data-progress="26"]::before { width: 26%; }
+.battery-tag[data-progress="27"]::before { width: 27%; }
+.battery-tag[data-progress="28"]::before { width: 28%; }
+.battery-tag[data-progress="29"]::before { width: 29%; }
+.battery-tag[data-progress="30"]::before { width: 30%; }
+.battery-tag[data-progress="31"]::before { width: 31%; }
+.battery-tag[data-progress="32"]::before { width: 32%; }
+.battery-tag[data-progress="33"]::before { width: 33%; }
+.battery-tag[data-progress="34"]::before { width: 34%; }
+.battery-tag[data-progress="35"]::before { width: 35%; }
+.battery-tag[data-progress="36"]::before { width: 36%; }
+.battery-tag[data-progress="37"]::before { width: 37%; }
+.battery-tag[data-progress="38"]::before { width: 38%; }
+.battery-tag[data-progress="39"]::before { width: 39%; }
+.battery-tag[data-progress="40"]::before { width: 40%; }
+.battery-tag[data-progress="41"]::before { width: 41%; }
+.battery-tag[data-progress="42"]::before { width: 42%; }
+.battery-tag[data-progress="43"]::before { width: 43%; }
+.battery-tag[data-progress="44"]::before { width: 44%; }
+.battery-tag[data-progress="45"]::before { width: 45%; }
+.battery-tag[data-progress="46"]::before { width: 46%; }
+.battery-tag[data-progress="47"]::before { width: 47%; }
+.battery-tag[data-progress="48"]::before { width: 48%; }
+.battery-tag[data-progress="49"]::before { width: 49%; }
+.battery-tag[data-progress="50"]::before { width: 50%; }
+.battery-tag[data-progress="51"]::before { width: 51%; }
+.battery-tag[data-progress="52"]::before { width: 52%; }
+.battery-tag[data-progress="53"]::before { width: 53%; }
+.battery-tag[data-progress="54"]::before { width: 54%; }
+.battery-tag[data-progress="55"]::before { width: 55%; }
+.battery-tag[data-progress="56"]::before { width: 56%; }
+.battery-tag[data-progress="57"]::before { width: 57%; }
+.battery-tag[data-progress="58"]::before { width: 58%; }
+.battery-tag[data-progress="59"]::before { width: 59%; }
+.battery-tag[data-progress="60"]::before { width: 60%; }
+.battery-tag[data-progress="61"]::before { width: 61%; }
+.battery-tag[data-progress="62"]::before { width: 62%; }
+.battery-tag[data-progress="63"]::before { width: 63%; }
+.battery-tag[data-progress="64"]::before { width: 64%; }
+.battery-tag[data-progress="65"]::before { width: 65%; }
+.battery-tag[data-progress="66"]::before { width: 66%; }
+.battery-tag[data-progress="67"]::before { width: 67%; }
+.battery-tag[data-progress="68"]::before { width: 68%; }
+.battery-tag[data-progress="69"]::before { width: 69%; }
+.battery-tag[data-progress="70"]::before { width: 70%; }
+.battery-tag[data-progress="71"]::before { width: 71%; }
+.battery-tag[data-progress="72"]::before { width: 72%; }
+.battery-tag[data-progress="73"]::before { width: 73%; }
+.battery-tag[data-progress="74"]::before { width: 74%; }
+.battery-tag[data-progress="75"]::before { width: 75%; }
+.battery-tag[data-progress="76"]::before { width: 76%; }
+.battery-tag[data-progress="77"]::before { width: 77%; }
+.battery-tag[data-progress="78"]::before { width: 78%; }
+.battery-tag[data-progress="79"]::before { width: 79%; }
+.battery-tag[data-progress="80"]::before { width: 80%; }
+.battery-tag[data-progress="81"]::before { width: 81%; }
+.battery-tag[data-progress="82"]::before { width: 82%; }
+.battery-tag[data-progress="83"]::before { width: 83%; }
+.battery-tag[data-progress="84"]::before { width: 84%; }
+.battery-tag[data-progress="85"]::before { width: 85%; }
+.battery-tag[data-progress="86"]::before { width: 86%; }
+.battery-tag[data-progress="87"]::before { width: 87%; }
+.battery-tag[data-progress="88"]::before { width: 88%; }
+.battery-tag[data-progress="89"]::before { width: 89%; }
+.battery-tag[data-progress="90"]::before { width: 90%; }
+.battery-tag[data-progress="91"]::before { width: 91%; }
+.battery-tag[data-progress="92"]::before { width: 92%; }
+.battery-tag[data-progress="93"]::before { width: 93%; }
+.battery-tag[data-progress="94"]::before { width: 94%; }
+.battery-tag[data-progress="95"]::before { width: 95%; }
+.battery-tag[data-progress="96"]::before { width: 96%; }
+.battery-tag[data-progress="97"]::before { width: 97%; }
+.battery-tag[data-progress="98"]::before { width: 98%; }
+.battery-tag[data-progress="99"]::before { width: 99%; }
+.battery-tag[data-progress="100"]::before { width: 100%; }
+
+.time-tag {
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fcdcd 100%);
+    color: #2d5a3d !important;
+}
+
+.capacity-tag {
+    font-weight: 600;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.capacity-tag.capacity-unknown {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    color: #ffffff !important;
+}
+
+.capacity-tag.capacity-small {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.capacity-tag.capacity-medium {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.capacity-tag.capacity-large {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.capacity-tag.capacity-xlarge {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.port-status {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.port-status.active {
+    background: rgba(0, 245, 255, 0.2);
+    color: #00f5ff;
+}
+
+.port-status.full {
+    background: rgba(0, 255, 144, 0.2);
+    color: #00FF90;
+}
+
+.port-status.idle {
+    background: rgba(85, 85, 85, 0.3);
+    color: #aaa;
+}
+
+.port-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.port-metric {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.port-metric .metric-label {
+    display: block;
+    font-size: 8px;
+    color: #aaa;
+    font-weight: 500;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.port-metric .metric-value {
+    display: block;
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* 响应式设计 - 手机端优化 */
+@media (max-width: 1024px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        height: auto;
+        padding: 0;
+    }
+    
+    .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .port-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* 平板端布局调整 */
+    .left-column, .middle-column, .right-panel {
+        width: 100%;
+    }
+    
+    /* Fix for tablet alignment: override max-width constraints from specific selectors */
+    .reallyvison-card,
+    .container:not(.compact-mode) .reallyvison-card,
+    .container.compact-mode .reallyvison-card {
+        height: 300px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .reallyvison {
+        width: 200px;
+        height: 267px;
+        background-size: 94px 168px;
+        background-position: 53px 40px;
+        margin: 0 auto;
+    }
+    
+    .charging-indicator {
+        width: 94px;
+        height: 168px;
+        background-size: 94px 168px;
+        left: 53px;
+        top: 40px;
+    }
+    
+    /* 平板端线材尺寸调整 */
+    .cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-kutaike {
+        width: 76px;
+        height: 34px;
+    }
+    
+    .cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple {
+        width: 18px;
+        height: 43px;
+    }
+    
+    .cable-usb {
+        width: 76px;
+        height: 38px;
+    }
+    
+    /* 平板端端口位置调整 */
+    .cable-port-0 { left: 10px; top: 114px; }
+    .cable-port-1 { left: 10px; top: 141px; }
+    .cable-port-2 { left: 10px; top: 168px; }
+    .cable-port-3 { left: 77px; top: 198px; }
+    .cable-port-usb { left: 10px; top: 76px; }
+}
+
+/* 手机端专用样式 */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .container {
+        padding: 8px;
+        max-width: 100%;
+    }
+
+    /* 手机端头部优化 - 单行布局 */
+    .header {
+        padding: 10px 14px;
+        margin-bottom: 12px;
+    }
+
+    .header-content {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+    }
+
+    .title {
+        font-size: 14px;
+        width: auto;
+        text-align: left;
+        margin: 0;
+        white-space: nowrap;
+    }
+    
+    .header-layout-toggle {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 85px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+
+    .toggle-slider {
+        width: 38px;
+        height: 20px;
+    }
+
+    .header-layout-toggle.compact-active .toggle-slider {
+        transform: translateX(43px);
+    }
+
+    .toggle-labels {
+        padding: 0 8px;
+    }
+
+    .toggle-label {
+        font-size: 11px;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .settings-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .status-indicator {
+        font-size: 11px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* 手机端主布局 - 垂直堆叠 */
+    .main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: auto;
+        min-height: calc(100vh - 140px);
+    }
+    
+    /* 手机端模块化卡片样式 */
+    .mobile-module {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-module:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .mobile-module h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 8px;
+    }
+    
+    /* 手机端指标卡片 */
+    .left-column {
+        order: 1;
+    }
+    
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    
+    .metric-card {
+        min-height: 70px;
+        height: auto;
+        padding: 12px;
+        flex-direction: column;
+        text-align: center;
+        gap: 4px;
+    }
+    
+    .metric-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+    
+    .metric-content h3 {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+    
+    .metric-value {
+        font-size: 14px;
+    }
+    
+    .metric-change {
+        font-size: 9px;
+        padding: 1px 3px;
+        min-width: 25px;
+    }
+    
+    /* 手机端3D视图 */
+    .middle-column {
+        order: 2;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .reallyvison-card {
+        height: 320px;
+        padding: 12px;
+        position: relative;
+        z-index: 10;
+        overflow: visible;
+    }
+    
+    .reallyvison-header {
+        margin-bottom: 12px;
+    }
+    
+    .reallyvison-header h3 {
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    
+    .toggle-buttons {
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .rotation-toggle, .layout-toggle {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .reallyvison {
+        width: 160px;
+        height: 213px;
+        background-size: 75px 134px;
+        background-position: 42px 32px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 5;
+        overflow: visible;
+    }
+    
+    .charging-indicator {
+        width: 75px;
+        height: 134px;
+        background-size: 75px 134px;
+        left: 42px;
+        top: 32px;
+        z-index: 3;
+    }
+    
+    /* 手机端线材尺寸调整 */
+    .cable-putong, .cable-xili, .cable-xili2, .cable-yunduo, .cable-okokok, .cable-meizu, .cable-kutaike {
+        width: 60px;
+        height: 27px;
+    }
+    
+    .cable-land-putong, .cable-land-yunduo, .cable-land-xili2, .cable-land-okokok, .cable-land-meizu, .cable-land-kutaike, .cable-land-apple {
+        width: 14px;
+        height: 34px;
+    }
+    
+    .cable-usb {
+        width: 60px;
+        height: 30px;
+    }
+    
+    /* 手机端端口位置调整 */
+    .cable-port-0 { left: 8px; top: 91px; }
+    .cable-port-1 { left: 8px; top: 113px; }
+    .cable-port-2 { left: 8px; top: 134px; }
+    .cable-port-3 { left: 61px; top: 158px; }
+    .cable-port-usb { left: 8px; top: 60px; }
+    
+    /* 手机端简洁模式实时数据 */
+    .compact-metrics {
+        position: static;
+        transform: none !important;
+        margin-top: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 12px;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        z-index: 1;
+    }
+    
+    .container.compact-mode .compact-metrics {
+        display: grid !important;
+    }
+    
+    .compact-metric {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+    
+    .compact-label {
+        font-size: 10px;
+    }
+    
+    .compact-value {
+        font-size: 14px;
+        font-weight: 700;
+    }
+    
+    /* 手机端充电桩状态 */
+    .status-section {
+        order: 3;
+    }
+    
+    .status-card {
+        padding: 16px;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .status-item {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .status-icon {
+        font-size: 18px;
+        width: 28px;
+    }
+    
+    .status-label {
+        font-size: 11px;
+    }
+    
+    .status-value {
+        font-size: 13px;
+    }
+    
+    /* 手机端图表区域 */
+    .chart-section {
+        order: 4;
+        min-height: 250px;
+    }
+    
+    .chart-card {
+        padding: 16px;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    .chart-mode-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .chart-mode-btn, .wake-lock-btn {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+    
+    #powerChart {
+        min-height: 150px;
+        max-height: 180px;
+    }
+    
+    /* 手机端端口详情 - 2x2网格布局 */
+    .right-panel {
+        order: 5;
+        padding: 0;
+    }
+    
+    .ports-header {
+        margin-bottom: 12px;
+    }
+    
+    .ports-header h3 {
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .refresh-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .ports-container {
+        padding: 12px;
+        border-radius: 16px;
+        max-height: none;
+        height: auto;
+    }
+    
+    /* 手机端端口网格 - 2x2布局 */
+    .ports-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto; /* 让行高自适应内容 */
+        gap: 8px;
+        height: auto;
+    }
+    
+    .port-item {
+        padding: 10px;
+        margin-bottom: 0;
+        border-radius: 8px;
+        height: auto; /* 自适应高度 */
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .port-header {
+        margin-bottom: 6px;
+        flex-shrink: 0;
+    }
+    
+    .port-id {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+    
+    .manufacturer-icon {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .qualcomm-badge {
+        font-size: 7px;
+        padding: 1px 3px;
+        margin-left: 4px;
+    }
+    
+    .port-tags {
+        margin: 4px 0;
+        gap: 2px;
+        flex-wrap: wrap;
+        min-height: 20px;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .port-tag {
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    
+    .port-metrics {
+        grid-template-columns: 1fr;
+        gap: 3px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+    
+    .port-metric {
+        padding: 3px 4px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 4px;
+        min-height: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .port-metric .metric-label {
+        font-size: 6px;
+        margin-bottom: 1px;
+    }
+    
+    .port-metric .metric-value {
+        font-size: 9px;
+        font-weight: 600;
+    }
+    
+    /* 手机端简洁模式优化 */
+    .container.compact-mode .main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .container.compact-mode .left-column,
+    .container.compact-mode .status-section,
+    .container.compact-mode .chart-section {
+        display: none;
+    }
+    
+    .container.compact-mode .middle-column {
+        order: 1;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .container.compact-mode .right-panel {
+        order: 2;
+        flex: 1;
+        height: auto;
+        overflow: visible;
+    }
+    
+    .container.compact-mode .reallyvison-card {
+        height: 320px;
+    }
+    
+    .container.compact-mode .reallyvison {
+        width: 200px;
+        height: 267px;
+        background-size: 94px 168px;
+        background-position: 53px 40px;
+    }
+    
+    .container.compact-mode .charging-indicator {
+        width: 94px;
+        height: 168px;
+        background-size: 94px 168px;
+        left: 53px;
+        top: 40px;
+    }
+    
+    /* 手机端电力信息位置调整 */
+    .container.compact-mode .power-info {
+        font-size: 10px;
+        padding: 1px 4px;
+        height: 16px;
+        min-width: 60px;
+    }
+    
+    .container.compact-mode #power-info-0 { top: 76px; left: 8px; }
+    .container.compact-mode #power-info-1 { top: 98px; left: 8px; }
+    .container.compact-mode #power-info-2 { top: 120px; left: 8px; }
+    .container.compact-mode #power-info-3 { top: 142px; left: 8px; }
+    .container.compact-mode #power-info-4 { top: 180px; left: 76px; }
+}
+
+/* 超小屏手机优化 */
+@media (max-width: 480px) {
+    .container {
+        padding: 6px;
+    }
+    
+    .header {
+        padding: 10px 12px;
+    }
+    
+    .title {
+        font-size: 16px;
+    }
+    
+    .header-layout-toggle {
+        width: 100px;
+        height: 28px;
+    }
+    
+    .metrics-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .metric-card {
+        min-height: 60px;
+        height: auto;
+        padding: 8px;
+    }
+    
+    .reallyvison {
+        width: 140px;
+        height: 187px;
+        background-size: 66px 117px;
+        background-position: 37px 28px;
+    }
+    
+    .charging-indicator {
+        width: 66px;
+        height: 117px;
+        background-size: 66px 117px;
+        left: 37px;
+        top: 28px;
+    }
+    
+    .cable-port-0 { left: 7px; top: 80px; }
+    .cable-port-1 { left: 7px; top: 99px; }
+    .cable-port-2 { left: 7px; top: 117px; }
+    .cable-port-3 { left: 54px; top: 138px; }
+    .cable-port-usb { left: 7px; top: 52px; }
+    
+    .status-grid {
+        gap: 6px;
+    }
+    
+    .status-item {
+        padding: 8px;
+    }
+    
+    .compact-metrics {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .port-item {
+        padding: 8px;
+        height: auto; /* 自适应高度 */
+        min-height: 100px;
+    }
+    
+    .ports-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .port-metrics {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+    
+    .port-metric {
+        padding: 2px 3px;
+        min-height: 16px;
+    }
+    
+    .port-metric .metric-label {
+        font-size: 5px;
+    }
+    
+    .port-metric .metric-value {
+        font-size: 8px;
+    }
+}
+
+/* 高级视觉效果 */
+.metric-card, .chart-card, .status-card, .ports-container {
+    position: relative;
+}
+
+.metric-card::after, .chart-card::after, .status-card::after, .ports-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.1), rgba(255, 107, 107, 0.1));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.metric-card:hover::after, .chart-card:hover::after, .status-card:hover::after, .ports-container:hover::after {
+    opacity: 1;
+}
+
+/* 功率负载条 */
+.power-load-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.power-load-bar {
+    height: 100%;
+    background: #2ed573;
+    width: 0%;
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.5);
+}
+
+/* 优化图表卡片视觉 */
+.chart-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 加载动画 */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* 错误状态 */
+.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.error .metric-value {
+    color: #ef4444;
+}
+
+/* 粒子呼吸光效系统 */
+.particle-system {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.particle-system.active {
+    opacity: 1;
+}
+
+/* 粒子元素 */
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, #00f5ff 0%, transparent 70%);
+    border-radius: 50%;
+    animation: particleFloat 3s infinite ease-in-out;
+    will-change: transform, opacity; /* 硬件加速 */
+}
+
+.particle:nth-child(2n) {
+    background: radial-gradient(circle, #00d4ff 0%, transparent 70%);
+    animation-delay: -1s;
+}
+
+.particle:nth-child(3n) {
+    background: radial-gradient(circle, #40e0d0 0%, transparent 70%);
+    animation-delay: -2s;
+}
+
+.particle:nth-child(4n) {
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, #00f5ff 0%, #00d4ff 30%, transparent 70%);
+    animation-delay: -0.5s;
+}
+
+.particle:nth-child(5n) {
+    width: 3px;
+    height: 3px;
+    background: radial-gradient(circle, #87ceeb 0%, transparent 70%);
+    animation-delay: -1.5s;
+}
+
+/* 简洁模式下粒子动画放大效果 */
+.container.compact-mode .particle {
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #00f5ff 0%, transparent 70%);
+}
+
+.container.compact-mode .particle:nth-child(2n) {
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, #00d4ff 0%, transparent 70%);
+}
+
+.container.compact-mode .particle:nth-child(3n) {
+    width: 7px;
+    height: 7px;
+    background: radial-gradient(circle, #40e0d0 0%, transparent 70%);
+}
+
+.container.compact-mode .particle:nth-child(4n) {
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle, #00f5ff 0%, #00d4ff 30%, transparent 70%);
+}
+
+.container.compact-mode .particle:nth-child(5n) {
+    width: 5px;
+    height: 5px;
+    background: radial-gradient(circle, #87ceeb 0%, transparent 70%);
+}
+
+/* 粒子浮动动画 */
+@keyframes particleFloat {
+    0%, 100% {
+        transform: translateY(0px) scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* 呼吸光环效果 */
+.breathing-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 40%, rgba(0, 245, 255, 0.1) 50%, rgba(0, 212, 255, 0.2) 60%, transparent 70%);
+    animation: breathingGlow 2s infinite ease-in-out;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    will-change: transform, opacity;
+}
+
+.breathing-glow.active {
+    opacity: 1;
+}
+
+@keyframes breathingGlow {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.6;
+    }
+}
+
+/* 能量波纹效果 */
+.energy-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(0, 245, 255, 0.4);
+    border-radius: 50%;
+    animation: energyRipple 1.5s infinite ease-out;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    will-change: transform, opacity;
+}
+
+.energy-ripple.active {
+    opacity: 1;
+}
+
+.energy-ripple:nth-child(2) {
+    animation-delay: 0.5s;
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.energy-ripple:nth-child(3) {
+    animation-delay: 1s;
+    border-color: rgba(64, 224, 208, 0.2);
+}
+
+@keyframes energyRipple {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+    }
+}
+
+/* 端口4横屏模式下的z-index调整 */
+#reallyvison.rotated .cable-land-putong.cable-port-3,
+#reallyvison.rotated .cable-land-yunduo.cable-port-3,
+#reallyvison.rotated .cable-land-xili2.cable-port-3 {
+    z-index: -2 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#reallyvison.rotated #charging-indicator-4 {
+    z-index: -2 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 确保端口4在竖屏模式下也正确显示 */
+#reallyvison:not(.rotated) .cable-land-putong.cable-port-3,
+#reallyvison:not(.rotated) .cable-land-yunduo.cable-port-3,
+#reallyvison:not(.rotated) .cable-land-xili2.cable-port-3 {
+    z-index: -1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#reallyvison:not(.rotated) #charging-indicator-4 {
+    z-index: -1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 端口4的z-index层级设置 - 修正版 */
+/* 端口4线材图片始终在背景图下方 */
+.cable-land-putong.cable-port-3,
+.cable-land-yunduo.cable-port-3,
+.cable-land-xili2.cable-port-3 {
+    z-index: -1 !important;
+}
+
+/* 端口4充电指示图始终在背景图上方 */
+#charging-indicator-4 {
+    z-index: 3 !important;
+}
+
+/* 横屏模式下保持正确的层级关系 - 加强版 */
+#reallyvison.rotated .cable-land-putong.cable-port-3,
+#reallyvison.rotated .cable-land-yunduo.cable-port-3,
+#reallyvison.rotated .cable-land-xili2.cable-port-3 {
+    z-index: -1 !important; /* 线材在背景图下方 */
+    position: absolute !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#reallyvison.rotated #charging-indicator-4 {
+    z-index: 3 !important; /* 充电指示图在背景图上方 */
+    position: absolute !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 额外的强制规则，确保端口4线材永远不会跑到上层 */
+.reallyvison .cable-land-putong.cable-port-3,
+.reallyvison .cable-land-yunduo.cable-port-3,
+.reallyvison .cable-land-xili2.cable-port-3,
+.reallyvison .cable-land-okokok.cable-port-3,
+.reallyvison .cable-land-kutaike.cable-port-3,
+.reallyvison .cable-land-apple.cable-port-3 {
+    z-index: -1 !important;
+    position: absolute !important;
+}
+
+.reallyvison.rotated .cable-land-putong.cable-port-3,
+.reallyvison.rotated .cable-land-yunduo.cable-port-3,
+.reallyvison.rotated .cable-land-xili2.cable-port-3,
+.reallyvison.rotated .cable-land-okokok.cable-port-3,
+.reallyvison.rotated .cable-land-kutaike.cable-port-3,
+.reallyvison.rotated .cable-land-apple.cable-port-3 {
+    z-index: -1 !important;
+    position: absolute !important;
+}
+
+/* 简洁模式布局 - 只显示3D视图和端口详情 */
+.container.compact-mode .main-layout {
+    grid-template-columns: 1fr 520px;
+    gap: 8px;
+    height: calc(100vh - 120px);
+    padding: 0;
+    margin: 0;
+}
+
+/* 布局切换：左侧指标卡片从左上角滑出并完全隐藏 */
+.container.compact-mode .left-column {
+    transform: translate(-100%, -100%);
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container:not(.compact-mode) .left-column {
+    transform: translate(0, 0);
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 布局切换：充电桩状态区域向下滑出并完全隐藏 */
+.container.compact-mode .status-section {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container:not(.compact-mode) .status-section {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 布局切换：功率趋势图表向左滑出并完全隐藏 */
+.container.compact-mode .chart-section {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container:not(.compact-mode) .chart-section {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container.compact-mode .middle-column {
+    grid-column: 1 / 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 0;
+    width: 100%;
+    margin: 0;
+    padding-left: 0;
+    margin-left: 0px;
+}
+
+/* 3D视图扩大尺寸 - 自适应容器宽度 */
+.container.compact-mode .reallyvison-card {
+    width: 100%; /* 自适应宽度 */
+    max-width: 100% !important; /* 不超出容器 */
+    height: 1000px; /* 高度增加一倍 */
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 auto; /* 居中对齐 */
+    padding: 20px;
+    overflow: hidden !important; /* 防止超出 */
+    box-sizing: border-box;
+}
+
+.container:not(.compact-mode) .reallyvison-card {
+    width: 100%; /* 自适应宽度 */
+    max-width: 280px;
+    height: 370px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 auto; /* 居中对齐 */
+}
+
+.container.compact-mode .right-panel {
+    flex: 0 0 520px;
+    max-width: 520px;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    margin-left: -8px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px;
+}
+
+/* 简洁模式 760-1024px 端口详情自适应宽度 */
+@media screen and (min-width: 760px) and (max-width: 1024px) {
+    .container.compact-mode .right-panel {
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* 简洁模式 535-759px 端口详情自适应宽度 */
+@media screen and (min-width: 535px) and (max-width: 759px) {
+    .container.compact-mode .right-panel {
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* 简洁模式 486-759px 3D模型缩小到0.67倍 */
+@media screen and (min-width: 486px) and (max-width: 759px) {
+    .container.compact-mode .reallyvison {
+        transform: scale(calc(clamp(0.19, 100vw / 1120, 0.37))) !important;
+    }
+
+    .container.compact-mode .reallyvison.rotated {
+        transform: scale(calc(clamp(0.19, 100vw / 1120, 0.37))) rotate(-90deg) !important;
+    }
+}
+
+/* 标准模式 480-759px 3D模型扩大1.5倍 + 高度自适应 */
+@media screen and (min-width: 480px) and (max-width: 759px) {
+    /* 卡片高度自适应 */
+    .container:not(.compact-mode) .reallyvison-card {
+        height: auto !important;
+        min-height: 500px !important;
+        overflow: visible !important;
+    }
+
+    /* 3D模型扩大1.5倍 */
+    .container:not(.compact-mode) .reallyvison {
+        transform: scale(calc(clamp(3.0, 100vw / 80, 7.5))) !important;
+        margin: 40px auto !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison.rotated {
+        transform: scale(calc(clamp(3.0, 100vw / 80, 7.5))) rotate(-90deg) !important;
+    }
+}
+
+/* 端口详情平滑过渡动画 - 仅在切换时触发 */
+.right-panel {
+    transform: translateX(0);
+    opacity: 1;
+    transition: none; /* 默认无动画，避免进入时卡顿 */
+}
+
+/* 端口详情在简洁模式下的优化 */
+.container.compact-mode .right-panel {
+    transform: translateX(0);
+    opacity: 1;
+    height: auto;
+    overflow-y: visible; /* 修复：允许页面滚动 */
+    overflow-x: visible;
+}
+
+/* 端口详情内容的过渡动画 */
+.right-panel .ports-container {
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 布局切换时的动画类 - 仅在切换时添加 */
+.right-panel.switching-to-compact {
+    animation: slideInFromRight 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-panel.switching-to-standard {
+    animation: slideInFromLeft 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 端口详情动画关键帧 - 优化版 */
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(60px);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-60px);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToRight {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(60px);
+        opacity: 0.7;
+    }
+}
+
+/* 简洁模式下的实时数据显示 - 在3D可视化卡片右上角但使用反向旋转抵消 */
+.compact-metrics {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-width: 140px;
+    transform: scale(1.25);
+    transform-origin: top right;
+    transition: none;
+}
+
+.container.compact-mode .compact-metrics {
+    display: flex !important;
+}
+
+/* 当3D视图旋转时，实时数据反向旋转保持水平 */
+.container.compact-mode .reallyvison.rotated .compact-metrics {
+    transform: scale(0.85) rotate(90deg) !important;
+    transform-origin: top right;
+}
+
+/* 当3D视图不旋转时，实时数据保持正常 */
+.container.compact-mode .reallyvison:not(.rotated) .compact-metrics {
+    transform: scale(0.85) rotate(0deg) !important;
+    transform-origin: top right;
+}
+
+/* 简洁模式下3D视图内部元素尺寸调整 */
+.container.compact-mode .reallyvison {
+    width: 476px;
+    height: 634px;
+    background-size: 224px 400px;
+    background-position: 126px 94px;
+}
+
+/* 简洁模式下功率灯光效果尺寸调整 */
+.container.compact-mode .power-light-effect {
+    width: 224px !important;
+    height: 400px !important;
+    background-size: 224px 400px !important;
+    left: 126px !important;
+    top: 94px !important;
+}
+
+/* 简洁模式下充电指示图层尺寸调整 */
+.container.compact-mode .charging-indicator {
+    width: 224px;
+    height: 400px;
+    background-size: 224px 400px;
+    left: 126px;
+    top: 94px;
+}
+
+/* 简洁模式下线材尺寸调整 */
+.container.compact-mode .cable-putong,
+.container.compact-mode .cable-xili,
+.container.compact-mode .cable-xili2,
+.container.compact-mode .cable-yunduo,
+.container.compact-mode .cable-okokok,
+.container.compact-mode .cable-meizu {
+    width: 180px;
+    height: 80px;
+}
+
+.container.compact-mode .cable-land-putong,
+.container.compact-mode .cable-land-yunduo,
+.container.compact-mode .cable-land-xili2,
+.container.compact-mode .cable-land-okokok,
+.container.compact-mode .cable-land-meizu,
+.container.compact-mode .cable-land-kutaike,
+.container.compact-mode .cable-land-apple {
+    width: 42px;
+    height: 102px;
+}
+
+.container.compact-mode .cable-usb {
+    width: 180px;
+    height: 90px;
+}
+
+/* 简洁模式下端口位置调整（按2倍比例） */
+.container.compact-mode .cable-port-0 {
+    left: 20px;
+    top: 270px;
+}
+
+.container.compact-mode .cable-port-1 {
+    left: 20px;
+    top: 336px;
+}
+
+.container.compact-mode .cable-port-2 {
+    left: 20px;
+    top: 400px;
+}
+
+.container.compact-mode .cable-port-3 {
+    left: 184px;
+    top: 470px;
+}
+
+.container.compact-mode .cable-port-usb {
+    left: 24px;
+    top: 180px;
+}
+
+.compact-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.compact-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-value {
+    font-size: 12px;
+    color: #00f5ff;
+    font-weight: 700;
+    text-align: right;
+}
+
+/* 滑出动画关键帧 */
+@keyframes slideOutTopLeft {
+    0% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-100%, -100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInTopLeft {
+    0% {
+        transform: translate(-100%, -100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutDown {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInUp {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutLeft {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInRight {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 竖屏模式下保持正确的层级关系 */
+#reallyvison:not(.rotated) .cable-land-putong.cable-port-3,
+#reallyvison:not(.rotated) .cable-land-yunduo.cable-port-3,
+#reallyvison:not(.rotated) .cable-land-xili2.cable-port-3,
+#reallyvison:not(.rotated) .cable-land-kutaike.cable-port-3 {
+    z-index: -1 !important; /* 线材在背景图下方 */
+}
+
+#reallyvison:not(.rotated) #charging-indicator-4 {
+    z-index: 3 !important; /* 充电指示图在背景图上方 */
+}
+
+/* 标题右侧的布局切换按钮 - 跟随标题排列 */
+.header-layout-toggle {
+    position: relative; /* 移除absolute定位 */
+    left: auto;
+    top: auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    background: rgb(0, 0, 0);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 0px solid rgba(128, 128, 128, 0.2);
+    padding: 3px;
+    width: 100px;
+    height: 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    margin-left: 0; /* 由父容器gap控制 */
+}
+
+.header-layout-toggle:hover {
+    background: rgba(128, 128, 128, 0.2);
+    border-color: rgba(128, 128, 128, 0.3);
+}
+
+/* 滑动指示器 */
+.toggle-slider {
+    position: absolute;
+    width: 42px;
+    height: 22px;
+    background: rgba(255, 165, 38, 1);
+    border-radius: 12px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(2px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-layout-toggle.compact-active .toggle-slider {
+    transform: translateX(50px);
+    background: rgba(160, 160, 160, 0.9);
+}
+
+/* 文字标签 */
+.toggle-labels {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    z-index: 2;
+}
+
+.toggle-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+
+.toggle-label.active {
+    color: #000000;
+    font-weight: 700;
+}
+
+/* 移除原来的布局切换按钮样式 */
+.layout-toggle {
+    display: none !important;
+}
+
+/* 电力信息显示样式 - 仅在简约布局模式下显示 */
+.power-info {
+    position: absolute;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+    text-align: left;
+    white-space: nowrap;
+    display: none; /* 默认隐藏 */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* 添加文字阴影确保可读性 */
+    background: rgba(0, 0, 0, 0.2); /* 低透明度背景让高斯模糊效果更明显 */
+    backdrop-filter: blur(10px); /* 高斯模糊效果 */
+    border-radius: 6px; /* 圆角矩形 */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* 微妙的边框 */
+    height: 20px; /* 固定高度确保一致性 */
+    line-height: 16px; /* 设置行高让文字垂直居中 */
+    display: flex; /* 使用flex布局 */
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+    box-sizing: border-box; /* 确保padding包含在尺寸内 */
+}
+
+/* 只在简约布局模式下显示电力信息 */
+.container.compact-mode .power-info.show {
+    opacity: 1;
+    transform: scale(1);
+    display: flex;
+}
+
+/* 标准布局模式下强制隐藏电力信息 */
+.container:not(.compact-mode) .power-info {
+    display: none !important;
+}
+
+
+
+/* 充电完成星星效果 */
+.charging-complete-star {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 40px;
+    height: 40px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* 主星星 - 最大最亮 */
+.star-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #fff59d, #ffd700);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    animation: mainStarBreathing 4s ease-in-out infinite, mainStarRotate 8s linear infinite;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1));
+    transform-origin: center;
+}
+
+/* 小星星们 */
+.star-small {
+    position: absolute;
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+}
+
+/* 第二颗星星 - 中等大小 */
+.star-small:nth-child(2) {
+    width: 16px;
+    height: 16px;
+    top: -5px;
+    left: -8px;
+    animation: smallStar1 5s ease-in-out infinite, smallStarRotate1 6s linear infinite;
+}
+
+/* 第三颗星星 - 小尺寸 */
+.star-small:nth-child(3) {
+    width: 12px;
+    height: 12px;
+    top: 25px;
+    right: -5px;
+    animation: smallStar2 3.5s ease-in-out infinite, smallStarRotate2 4s linear infinite reverse;
+}
+
+/* 第四颗星星 - 最小 */
+.star-small:nth-child(4) {
+    width: 10px;
+    height: 10px;
+    bottom: -3px;
+    left: 8px;
+    animation: smallStar3 4.2s ease-in-out infinite, smallStarRotate3 7s linear infinite;
+}
+
+/* 主星星呼吸发光动画 */
+@keyframes mainStarBreathing {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(0.9);
+        opacity: 0.8;
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.8)) brightness(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 1;
+        filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1.2)) brightness(1.6);
+    }
+}
+
+/* 主星星旋转动画 */
+@keyframes mainStarRotate {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* 小星星1动画 */
+@keyframes smallStar1 {
+    0%, 100% {
+        transform: scale(0.7) translateY(0);
+        opacity: 0.6;
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) brightness(1);
+    }
+    50% {
+        transform: scale(1.2) translateY(-3px);
+        opacity: 0.9;
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)) brightness(1.4);
+    }
+}
+
+@keyframes smallStarRotate1 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 小星星2动画 */
+@keyframes smallStar2 {
+    0%, 100% {
+        transform: scale(0.8) translateX(0);
+        opacity: 0.5;
+        filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5)) brightness(1);
+    }
+    50% {
+        transform: scale(1.3) translateX(2px);
+        opacity: 0.85;
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) brightness(1.3);
+    }
+}
+
+@keyframes smallStarRotate2 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+
+/* 小星星3动画 */
+@keyframes smallStar3 {
+    0%, 100% {
+        transform: scale(0.6) translateY(0) translateX(0);
+        opacity: 0.4;
+        filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.4)) brightness(1);
+    }
+    50% {
+        transform: scale(1.1) translateY(-2px) translateX(-1px);
+        opacity: 0.8;
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) brightness(1.2);
+    }
+}
+
+@keyframes smallStarRotate3 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 星星粒子效果 */
+.star-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.star-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: radial-gradient(circle, #ffd700, rgba(255, 215, 0, 0.3), transparent);
+    border-radius: 50%;
+    animation: particleGlow 3s ease-in-out infinite;
+    box-shadow: 0 0 4px rgba(255, 215, 0, 0.8);
+}
+
+/* 8个发光小点点的位置 */
+.star-particle:nth-child(1) {
+    top: 5px;
+    left: 50%;
+    animation-delay: 0s;
+    animation-duration: 3.2s;
+}
+
+.star-particle:nth-child(2) {
+    top: 15px;
+    right: 8px;
+    animation-delay: 0.4s;
+    animation-duration: 2.8s;
+}
+
+.star-particle:nth-child(3) {
+    top: 50%;
+    right: 5px;
+    animation-delay: 0.8s;
+    animation-duration: 3.5s;
+}
+
+.star-particle:nth-child(4) {
+    bottom: 15px;
+    right: 8px;
+    animation-delay: 1.2s;
+    animation-duration: 3.0s;
+}
+
+.star-particle:nth-child(5) {
+    bottom: 5px;
+    left: 50%;
+    animation-delay: 1.6s;
+    animation-duration: 2.9s;
+}
+
+.star-particle:nth-child(6) {
+    bottom: 15px;
+    left: 8px;
+    animation-delay: 2.0s;
+    animation-duration: 3.3s;
+}
+
+.star-particle:nth-child(7) {
+    top: 50%;
+    left: 5px;
+    animation-delay: 2.4s;
+    animation-duration: 3.1s;
+}
+
+.star-particle:nth-child(8) {
+    top: 15px;
+    left: 8px;
+    animation-delay: 2.8s;
+    animation-duration: 2.7s;
+}
+
+/* 发光粒子呼吸动画 */
+@keyframes particleGlow {
+    0%, 100% {
+        transform: scale(0.3) translateY(0);
+        opacity: 0.3;
+        box-shadow: 0 0 2px rgba(255, 215, 0, 0.4);
+    }
+    20% {
+        transform: scale(0.8) translateY(-2px);
+        opacity: 0.7;
+        box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+    }
+    50% {
+        transform: scale(1.2) translateY(-4px);
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 1);
+    }
+    80% {
+        transform: scale(0.9) translateY(-2px);
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.9);
+    }
+}
+
+/* 端口电力信息位置 - 直接使用ID选择器确保最高优先级 */
+#power-info-0 { 
+    position: absolute !important;
+    top: 215px !important;
+    left: 22px !important;
+}
+
+#power-info-1 { 
+    top: 336px !important;
+    left: 22px !important;
+}
+
+#power-info-2 { 
+    top: 455px !important;
+    left: 22px !important;
+}
+
+#power-info-3 { 
+    top: 543px !important;
+    left: 22px !important;
+}
+
+#power-info-4 { 
+    top: 656px !important;
+    left: 309px !important;
+}
+
+/* 简洁模式下的电力信息位置调整 - 使用ID选择器确保最高优先级 */
+.container.compact-mode #power-info-0 { 
+    top: 180px !important; /* 215px * 2 */
+    left: -34px !important; /* 22px * 2 */
+}
+.container.compact-mode #power-info-1 { 
+    top: 292px !important; /* 336px * 2 */
+    left: -34px !important; /* 22px * 2 */
+}
+.container.compact-mode #power-info-2 { 
+    top: 360px !important; /* 455px * 2 */
+    left: -34px !important; /* 22px * 2 */
+}
+.container.compact-mode #power-info-3 { 
+    top: 426px !important; /* 543px * 2 */
+    left: -34px !important; /* 22px * 2 */
+}
+.container.compact-mode #power-info-4 { 
+    top: 542px !important; /* 656px * 2 */
+    left: 228px !important; /* 309px * 2 */
+}
+
+/* 旋转模式下的电力信息位置调整 */
+.reallyvison.rotated .power-info-0 { 
+    top: 50px; 
+    left: 135px; 
+}
+.reallyvison.rotated .power-info-1 { 
+    top: 50px; 
+    left: 168px; 
+}
+.reallyvison.rotated .power-info-2 { 
+    top: 50px; 
+    left: 200px; 
+}
+.reallyvison.rotated .power-info-3 { 
+    top: 50px; 
+    left: 90px; 
+}
+.reallyvison.rotated .power-info-4 { 
+    top: 200px; 
+    left: 235px; 
+}
+
+/* 不同线型的颜色样式 - 统一高度和布局 */
+.power-info.cable-putong { 
+    color: #26FFFF !important; 
+    border-color: rgba(38, 255, 255, 0.4) !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+.power-info.cable-yunduo { 
+    color: #B4E086 !important; 
+    border-color: rgba(180, 224, 134, 0.4) !important;
+     height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+.power-info.cable-okokok { 
+    color: #4B93FF !important; 
+    border-color: rgba(75, 147, 255, 0.4) !important;
+     height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+.power-info.cable-xili { 
+    color: #FF5454 !important; 
+    border-color: rgba(255, 84, 84, 0.4) !important;
+     height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.power-info.cable-xili2 { 
+    color: #FFA526 !important; /* 细雳线80Gps - 橙色 */
+    border-color: rgba(255, 165, 38, 0.4) !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    min-width: 120px !important; /* 统一最小宽度 */
+    padding: 2px 8px !important; /* 统一内边距 */
+}
+.power-info.cable-80gps { 
+    color: #FFA526 !important; 
+    border-color: rgba(255, 165, 38, 0.4) !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    min-width: 120px !important; /* 统一最小宽度 */
+    padding: 2px 8px !important; /* 统一内边距 */
+}
+.power-info.cable-meizu { 
+    color: #ffffff !important; /* 魅族卷卷线 - 文字颜色 */
+    background: #FF6ED8 !important; /* 魅族卷卷线 - 底色 */
+    border-color: rgba(255, 110, 216, 0.4) !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    min-width: 120px !important; /* 统一最小宽度 */
+    padding: 2px 8px !important; /* 统一内边距 */
+}
+
+.power-info.cable-huaxian { 
+    color: #ffffff !important; /* 花线 - 文字颜色 */
+    background: linear-gradient(45deg, #FF1493 0%, #FF1493 25%, #0080FF 25%, #0080FF 50%, #FF1493 50%, #FF1493 75%, #0080FF 75%, #0080FF 100%) !important;
+    background-size: 8px 8px !important;
+    border-color: rgba(255, 20, 147, 0.4) !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    min-width: 120px !important; /* 统一最小宽度 */
+    padding: 2px 8px !important; /* 统一内边距 */
+    animation: pixelShift 2s linear infinite !important;
+}
+/* --- 新增：设备控制面板样式 --- */
+
+/* 设置按钮 - 位于头部 */
+.settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(30deg);
+}
+
+/* 模态框遮罩 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 控制面板卡片 */
+.control-panel {
+    background: rgba(20, 20, 25, 0.85); /* Slightly more transparent */
+    backdrop-filter: blur(25px); /* Stronger blur */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px; /* Rounder corners */
+    width: 98%; /* 更宽的移动端宽度 */
+    max-width: 800px; /* 更宽的桌面最大宽度 (从600px增加到800px) */
+    max-height: 90vh; /* Taller */
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    scrollbar-width: none;
+}
+
+.control-panel::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.modal-overlay.active .control-panel {
+    transform: translateY(0);
+}
+
+/* 面板头部 - 现代化设计 */
+.panel-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.05) 0%, rgba(255, 107, 107, 0.05) 100%);
+}
+
+.panel-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.panel-icon {
+    font-size: 28px;
+    animation: rotateIcon 3s ease-in-out infinite;
+}
+
+@keyframes rotateIcon {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(15deg); }
+}
+
+.panel-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00f5ff, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    line-height: 1;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.5);
+    color: #ff6b6b;
+    transform: rotate(90deg);
+}
+
+/* 面板内容 */
+.panel-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.control-group h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+
+/* Token 控制行 */
+.token-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.token-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    padding: 8px 12px;
+    width: 80px;
+    text-align: center;
+    font-family: monospace;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* 端口开关网格 - Modernized */
+.port-switches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.modern-port-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 90px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-port-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.port-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.port-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 245, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00f5ff;
+}
+
+.port-id {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(0,0,0,0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* iOS Style Switch */
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    align-self: flex-end;
+}
+
+.ios-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ios-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.ios-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .ios-slider {
+    background-color: #00f5ff;
+}
+
+input:checked + .ios-slider:before {
+    transform: translateX(20px);
+}
+
+/* Active state glow for the card */
+.modern-port-card:has(input:checked) {
+    border-color: rgba(0, 245, 255, 0.3);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 245, 255, 0.05) 100%);
+}
+
+.modern-port-card:has(input:checked) .port-icon {
+    background: #00f5ff;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.4);
+}
+
+/* 状态日志 */
+.status-log {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #aaa;
+    height: 100px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry {
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 2px;
+}
+
+
+/* --- 性能优化层 --- */
+
+/* 强制开启硬件加速 */
+.reallyvison, 
+.charging-indicator,
+.cable-image,
+.cable-putong, 
+.cable-xili, 
+.cable-xili2, 
+.cable-yunduo, 
+.cable-okokok, 
+.cable-meizu, 
+.cable-apple, 
+.cable-kutaike, 
+.cable-huaxian,
+.control-panel,
+.particle {
+    will-change: transform, opacity;
+    transform: translateZ(0); /* 触发 GPU 合成 */
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* 移动端触摸优化 */
+button, 
+.toggle-buttons div, 
+.switch,
+.metric-card {
+    touch-action: manipulation; /* 消除 300ms 点击延迟 */
+    -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+}
+
+/* 滚动优化 */
+.ports-container,
+.control-panel {
+    -webkit-overflow-scrolling: touch; /* iOS 惯性滚动 */
+    overscroll-behavior: contain; /* 防止滚动穿透 */
+}
+
+/* 标准模式下 right-panel 不阻止页面滚动 */
+.container:not(.compact-mode) .right-panel {
+    overflow: visible;
+    overscroll-behavior: auto;
+}
+
+/* 减少重排 */
+.port-item {
+    contain: content; /* 告诉浏览器此元素内容独立，变化不影响外部 */
+}
+
+/* ============================================================================
+   Mobile & Responsive Fixes (Final Polish V2)
+   ============================================================================ */
+
+/* 1. Metric Cards & Inner Elements Fix */
+.metric-content {
+    width: 100%;
+    min-width: 0;
+}
+
+.power-load-bar-container {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+.metric-change {
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+}
+
+/* 2. Header Mobile Adaptation - Centered Layout */
+@media screen and (max-width: 768px) {
+    .header {
+        padding: 10px 14px;
+    }
+
+    .header-content {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+    }
+
+    .title {
+        font-size: 14px;
+        width: auto;
+        text-align: left;
+        order: 1;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .header-layout-toggle {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 85px;
+        height: 26px;
+        order: 2;
+        flex-shrink: 0;
+    }
+
+    .toggle-slider {
+        width: 38px;
+        height: 20px;
+    }
+
+    .header-layout-toggle.compact-active .toggle-slider {
+        transform: translateX(43px);
+    }
+
+    .toggle-labels {
+        padding: 0 8px;
+    }
+
+    .toggle-label {
+        font-size: 11px;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        order: 3;
+        flex-shrink: 0;
+    }
+
+    .settings-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .status-indicator {
+        font-size: 11px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* 3. Chart Controls Adaptation */
+@media screen and (max-width: 768px) {
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .chart-controls {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    .chart-mode-buttons {
+        flex: 1;
+        justify-content: space-between;
+    }
+
+    .chart-mode-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+
+    .wake-lock-btn {
+        width: 100%;
+        text-align: center;
+        margin-top: 4px;
+    }
+}
+
+/* 4. 3D Charging Station (Reallyvison) Width Fix */
+@media screen and (max-width: 768px) {
+    /* Target both card contexts to ensure override - 但不在简洁模式强制全宽 */
+    .reallyvison-card,
+    .container:not(.compact-mode) .reallyvison-card {
+        padding: 0;
+        overflow: visible;
+        overflow-x: hidden;
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        /* Force full viewport width safely - 仅对非简洁模式 */
+        width: calc(100% + 16px) !important; /* 8px padding * 2 */
+        max-width: none !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        margin-left: -8px !important;
+        margin-right: -8px !important;
+
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        height: auto !important;
+        aspect-ratio: auto;
+    }
+
+    /* 简洁模式下的卡片保持正常宽度，不超出容器 */
+    .container.compact-mode .reallyvison-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+        padding: 16px;
+    }
+
+    .reallyvison-header {
+        width: 100%;
+        padding: 16px;
+        box-sizing: border-box;
+        position: relative;
+        z-index: 10;
+        background: rgba(0,0,0,0.2);
+    }
+
+    .reallyvison {
+        margin: 40px auto 0 auto !important;
+        transform-origin: center top !important;
+        /* Re-calibrated scale for 100vw width - 1.5x larger */
+        transform: scale(calc(clamp(2.0, 100vw / 120, 5.0))) !important;
+    }
+
+    /* Support rotation on mobile while maintaining scale */
+    .reallyvison.rotated {
+        transform: scale(calc(clamp(2.0, 100vw / 120, 5.0))) rotate(-90deg) !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison {
+        transform: scale(calc(clamp(2.0, 100vw / 120, 5.0))) !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison.rotated {
+        transform: scale(calc(clamp(2.0, 100vw / 120, 5.0))) rotate(-90deg) !important;
+    }
+
+    .container.compact-mode .reallyvison {
+        /* 简洁模式基础尺寸是476x634，缩小到0.8倍 */
+        /* 原值 * 0.8: clamp(0.28, 100vw / 750, 0.56) */
+        transform: scale(calc(clamp(0.28, 100vw / 750, 0.56))) !important;
+        margin-bottom: 0 !important;
+        margin-top: 20px !important;
+    }
+
+    .container.compact-mode .reallyvison.rotated {
+        transform: scale(calc(clamp(0.28, 100vw / 750, 0.56))) rotate(-90deg) !important;
+    }
+}
+
+/* Ultra-narrow screens */
+@media screen and (max-width: 380px) {
+    /* 超小屏详细模式 - 放大两倍 */
+    /* 768px规则是 clamp(2.0, 100vw/120, 5.0)，这里翻倍 */
+    .reallyvison {
+        transform: scale(calc(clamp(4.0, 100vw / 60, 10.0))) !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison {
+        transform: scale(calc(clamp(4.0, 100vw / 60, 10.0))) !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison.rotated {
+        transform: scale(calc(clamp(4.0, 100vw / 60, 10.0))) rotate(-90deg) !important;
+    }
+
+    /* 简洁模式超小屏 - 大幅缩小 */
+    /* 基础尺寸476px，目标约150px，需要缩放约0.25 */
+    .container.compact-mode .reallyvison {
+        transform: scale(calc(clamp(0.15, 100vw / 1500, 0.25))) !important;
+    }
+
+    .container.compact-mode .reallyvison.rotated {
+        transform: scale(calc(clamp(0.15, 100vw / 1500, 0.25))) rotate(-90deg) !important;
+    }
+
+    .chart-mode-buttons {
+        gap: 4px;
+    }
+    
+    .chart-mode-btn {
+        font-size: 9px;
+        padding: 6px 2px;
+    }
+}
+
+/* 确保功能详情弹窗在控制面板之上 */
+#featureModal {
+    z-index: 1100;
+}
+
+/* 亮度滑块美化 */
+.brightness-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    outline: none;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brightness-slider:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+}
+
+.brightness-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00f5ff, #00d2ff);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(20, 20, 24, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.brightness-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 12px rgba(0, 245, 255, 0.4), 0 0 0 2px rgba(20, 20, 24, 0.8);
+}
+
+.brightness-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00f5ff, #00d2ff);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.feature-panel {
+    width: 90%;
+    max-width: 600px;
+    background: rgba(20, 20, 24, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay.active .feature-panel {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* 弹窗内容区域滚动 */
+.feature-panel .panel-content {
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* 数据表格样式 */
+.feature-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.feature-table th, .feature-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.feature-table th {
+    color: #888;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.feature-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* 调试日志样式 */
+.debug-log-view {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #a8ff78;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 温度显示样式 */
+.temp-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.temp-value {
+    font-size: 64px;
+    font-weight: 700;
+    color: #ff6b6b;
+    margin: 10px 0;
+}
+
+.temp-label {
+    font-size: 16px;
+    color: #888;
+}
+
+/* 简单的JSON展示 */
+.json-view {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 8px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    color: #ddd;
+}
+
+/* 弹窗中的图表容器 */
+.feature-chart-container {
+    height: 300px;
+    width: 100%;
+}
+
+.control-group.collapsible {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.control-group.collapsible:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-color: rgba(0, 245, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 245, 255, 0.08);
+}
+
+.control-group.collapsible .group-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    margin: 0;
+    border-radius: 0;
+    background: transparent;
+    transition: background 0.2s ease;
+    user-select: none;
+}
+
+.control-group.collapsible .group-header:hover {
+    background: rgba(0, 245, 255, 0.05);
+}
+
+.control-group.collapsible .group-header h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-group.collapsible .toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 12px;
+    color: rgba(0, 245, 255, 0.6);
+}
+
+.control-group.collapsible.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.control-group.collapsible .group-content {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
+    padding: 0 16px 0 16px;
+}
+
+.control-group.collapsible.active .group-content {
+    max-height: 800px;
+    opacity: 1;
+    padding: 0 16px 14px 16px;
+}
+
+/* Action Grid Layout */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.action-grid button {
+    padding: 9px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+    transition: all 0.2s ease;
+}
+
+.action-grid button:hover {
+    background: rgba(0, 245, 255, 0.1);
+    border-color: rgba(0, 245, 255, 0.3);
+    color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+}
+
+/* Input Row Layout */
+.input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.input-row input[type="text"],
+.input-row input[type="password"],
+.input-row input[type="number"],
+.input-row select {
+    flex: 1;
+    min-width: 80px;
+    padding: 9px 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.input-row input:focus,
+.input-row select:focus {
+    outline: none;
+    border-color: rgba(0,245,255,0.5);
+    background: rgba(0,0,0,0.6);
+    box-shadow: 0 0 0 3px rgba(0,245,255,0.1), 0 0 12px rgba(0,245,255,0.2);
+}
+
+.input-row button {
+    padding: 9px 16px;
+    white-space: nowrap;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+/* 亮度滑动条区域 - 精美设计 */
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.slider-row:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 245, 255, 0.2);
+}
+
+.slider-row label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    min-width: 50px;
+    letter-spacing: 0.3px;
+}
+
+.brightness-slider {
+    flex: 1;
+    height: 8px;
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.05) 0%,
+        rgba(0, 245, 255, 0.1) 50%,
+        rgba(255, 107, 107, 0.1) 100%);
+    border-radius: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    outline: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.brightness-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00f5ff 0%, #ff6b6b 100%);
+    cursor: pointer;
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(0, 245, 255, 0.6),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.brightness-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow:
+        0 0 0 4px rgba(0, 245, 255, 0.2),
+        0 0 20px rgba(0, 245, 255, 0.8),
+        0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.brightness-slider::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    box-shadow:
+        0 0 0 6px rgba(0, 245, 255, 0.3),
+        0 0 25px rgba(0, 245, 255, 1),
+        0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.brightness-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00f5ff 0%, #ff6b6b 100%);
+    cursor: pointer;
+    border: none;
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(0, 245, 255, 0.6),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+#brightnessValue {
+    min-width: 40px;
+    text-align: right;
+    font-size: 12px;
+    color: #00f5ff;
+}
+
+/* Protocol Grid */
+.protocol-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 12px 0;
+    font-size: 11px;
+}
+
+.protocol-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: rgba(255,255,255,0.75);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.protocol-checkbox:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.protocol-checkbox input[type="checkbox"] {
+    accent-color: #00f5ff;
+    width: 14px;
+    height: 14px;
+}
+
+/* Info Display Area */
+#infoDisplay {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.6);
+    min-height: 80px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Strategy Buttons */
+.strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.strategy-grid button {
+    padding: 10px;
+    font-size: 12px;
+}
+
+.strategy-grid button.active {
+    background: linear-gradient(135deg, #00f5ff, #8a2be2);
+    color: #fff;
+}
+
+/* Strategy Toggle Switch */
+.strategy-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.3);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-top: 8px;
+    transition: all 0.3s ease;
+}
+
+.strategy-toggle-container:hover {
+    background: rgba(0,0,0,0.4);
+    border-color: rgba(0, 245, 255, 0.2);
+}
+
+.strategy-toggle-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+}
+
+.strategy-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.strategy-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.2);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53); /* Warm colors for Temperature */
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Info text below toggle */
+.toggle-info {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Mobile Responsive for Control Panel */
+@media screen and (max-width: 480px) {
+    .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .protocol-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .input-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-row input,
+    .input-row select,
+    .input-row button {
+        width: 100%;
+    }
+}
+/* ==================== 现代化设置界面样式 ==================== */
+
+/* 现代化控制组 */
+.modern-group {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.modern-group:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-color: rgba(0, 245, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 245, 255, 0.08);
+}
+
+/* 现代化组头部 */
+.group-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-icon {
+    font-size: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0, 245, 255, 0.3));
+}
+
+.group-header-modern h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    text-transform: none;
+    letter-spacing: 0.3px;
+}
+
+/* 扫描按钮 - 现代化 */
+.scan-btn-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #00f5ff 0%, #00d4e6 100%);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 3px 10px rgba(0, 245, 255, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.scan-btn-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+}
+
+.scan-btn-modern:hover::before {
+    left: 100%;
+}
+
+.scan-btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 245, 255, 0.5);
+}
+
+.scan-btn-modern .btn-icon {
+    font-size: 16px;
+}
+
+.scan-btn-modern .btn-text {
+    font-weight: 700;
+}
+
+.scan-btn-modern .btn-badge {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* 设备列表容器 - 现代化 */
+.device-list-container-modern {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding: 6px;
+}
+
+.device-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.device-item.empty {
+    padding: 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.empty-icon {
+    font-size: 24px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}
+
+/* 断开连接按钮 - 现代化 */
+.disconnect-btn-modern {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(255, 107, 107, 0.25);
+}
+
+.disconnect-btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+/* 现代化按钮网格 */
+.button-grid-modern {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+/* 现代化大按钮 */
+.modern-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.modern-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-warning-modern {
+    background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+    color: #000;
+    box-shadow: 0 3px 10px rgba(255, 167, 38, 0.25);
+}
+
+.btn-warning-modern:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 5px 16px rgba(255, 167, 38, 0.4);
+}
+
+.btn-secondary-modern {
+    background: linear-gradient(135deg, #7c4dff 0%, #651fff 100%);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(124, 77, 255, 0.25);
+}
+
+.btn-secondary-modern:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 5px 16px rgba(124, 77, 255, 0.4);
+}
+
+.btn-icon-large {
+    font-size: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-text-large {
+    font-size: 11px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-hint {
+    font-size: 9px;
+    opacity: 0.7;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+/* Token输入包装器 */
+.token-input-wrapper {
+    margin-top: 2px;
+}
+
+.input-with-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.label-icon {
+    font-size: 14px;
+}
+
+.label-text {
+    letter-spacing: 0.3px;
+}
+
+/* 现代化输入组 */
+.input-group-modern {
+    display: flex;
+    gap: 8px;
+}
+
+.modern-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    padding: 9px 12px;
+    font-size: 12px;
+    outline: none;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.modern-input:focus {
+    border-color: rgba(0, 245, 255, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 
+        0 0 0 4px rgba(0, 245, 255, 0.1),
+        0 0 20px rgba(0, 245, 255, 0.2),
+        inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.save-btn-modern {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 16px;
+    background: linear-gradient(135deg, #00f5ff 0%, #00d4e6 100%);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 245, 255, 0.25);
+}
+
+.save-btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 245, 255, 0.5);
+}
+
+.save-btn-modern .btn-icon {
+    font-size: 14px;
+}
+
+.input-hint {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 6px;
+    background: rgba(0, 245, 255, 0.05);
+    border-radius: 6px;
+    border: 1px dashed rgba(0, 245, 255, 0.2);
+}
+
+/* 现代化端口开关 */
+.modern-switches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+    .button-grid-modern {
+        grid-template-columns: 1fr;
+    }
+
+    .modern-switches {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ==================== 小窗口标准模式3D模型调整（760px-1024px） ==================== */
+@media screen and (min-width: 760px) and (max-width: 1024px) {
+    /* 标准模式 middle-column 自适应宽度和高度0.6倍 */
+    .container:not(.compact-mode) .middle-column {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 360px !important; /* 600 * 0.6 = 360 */
+    }
+
+    /* 标准模式 3D卡片容器 - 自适应宽度和高度0.6倍 */
+    .container:not(.compact-mode) .reallyvison-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 405px !important; /* 675 * 0.6 = 405 */
+        padding: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 标准模式 - 重置基础尺寸并放大 */
+    .container:not(.compact-mode) .reallyvison {
+        width: 160px !important;
+        height: 213px !important;
+        background-size: 75px 134px !important;
+        background-position: 42px 32px !important;
+        transform: scale(2.0) !important;
+        margin: 40px auto !important;
+    }
+
+    .container:not(.compact-mode) .reallyvison.rotated {
+        transform: scale(2.0) rotate(-90deg) !important;
+    }
+
+    .container:not(.compact-mode) .charging-indicator {
+        width: 75px !important;
+        height: 134px !important;
+        background-size: 75px 134px !important;
+        left: 42px !important;
+        top: 32px !important;
+    }
+
+    /* 简洁模式 - 端口详情自适应宽度 */
+    .container.compact-mode .right-panel {
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+/* ==================== 超小屏幕最终覆盖（380px及以下） ==================== */
+@media screen and (max-width: 380px) {
+    /* 详细模式 - 0.8倍 (2.5 × 0.8 = 2.0) */
+    .reallyvison,
+    .container:not(.compact-mode) .reallyvison {
+        transform: scale(2.0) !important;
+    }
+
+    .reallyvison.rotated,
+    .container:not(.compact-mode) .reallyvison.rotated {
+        transform: scale(2.0) rotate(-90deg) !important;
+    }
+
+    /* 简洁模式 - 1.1倍 (1.0 × 1.1 = 1.1) */
+    .container.compact-mode .reallyvison {
+        width: 200px !important;
+        height: 267px !important;
+        background-size: 94px 168px !important;
+        background-position: 53px 40px !important;
+        transform: scale(1.1) !important;
+    }
+
+    .container.compact-mode .reallyvison.rotated {
+        transform: scale(1.1) rotate(-90deg) !important;
+    }
+
+    .container.compact-mode .charging-indicator {
+        width: 94px !important;
+        height: 168px !important;
+        background-size: 94px 168px !important;
+        left: 53px !important;
+        top: 40px !important;
+    }
+}

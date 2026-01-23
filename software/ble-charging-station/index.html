@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>小电拼充电站监控</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔌</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 线材配置和管理系统 -->
+    <script src="cable-config.js"></script>
+    <script src="cable-manager.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left-group">
+                    <h1 class="title">⚡ 小电拼充电站监控</h1>
+                    <!-- 新的布局切换按钮 -->
+                    <div class="header-layout-toggle" id="headerLayoutToggle">
+                        <div class="toggle-slider"></div>
+                        <div class="toggle-labels">
+                            <span class="toggle-label active" id="standardLabel">标准</span>
+                            <span class="toggle-label" id="compactLabel">简洁</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- 右侧操作区 -->
+                <div class="header-right" style="display: flex; align-items: center; gap: 16px;">
+                    <!-- 设置按钮 -->
+                    <button class="settings-btn" id="settingsBtn" title="设备控制">
+                        ⚙️
+                    </button>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">连接中...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- iPad三列布局 -->
+        <div class="main-layout">
+            <!-- 左侧列 - 指标卡片 -->
+            <div class="left-column">
+                <div class="metrics-row">
+                    <div class="metric-card power-card">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-content">
+                            <h3>总功率</h3>
+                            <div class="metric-value" id="powerValue">-- W</div>
+                            <div class="metric-change" id="powerChange">--</div>
+                            <div class="power-load-bar-container" style="margin-top: 8px;">
+                                <div class="power-load-bar" id="powerLoadBar"></div>
+                            </div>
+                            <div class="metric-change" id="powerLoadText" style="margin-top: 2px; font-size: 10px; opacity: 0.6;">负载 0%</div>
+                        </div>
+                    </div>
+                    <div class="metric-card voltage-card">
+                        <div class="metric-icon">🔋</div>
+                        <div class="metric-content">
+                            <h3>电压</h3>
+                            <div class="metric-value" id="voltageValue2">-- V</div>
+                            <div class="metric-change" id="voltageChange2">--</div>
+                        </div>
+                    </div>
+                    <div class="metric-card current-card">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-content">
+                            <h3>电流</h3>
+                            <div class="metric-value" id="currentValue2">-- A</div>
+                            <div class="metric-change" id="currentChange2">--</div>
+                        </div>
+                    </div>
+                    <div class="metric-card wifi-card">
+                        <div class="metric-icon">📶</div>
+                        <div class="metric-content">
+                            <h3>蓝牙信号</h3>
+                            <div class="metric-value" id="wifiValue">-- dBm</div>
+                            <div class="metric-change" id="wifiChange">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 功率趋势图表 -->
+                <div class="chart-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>功率趋势</h3>
+                            <div class="chart-controls">
+                                <div class="chart-mode-buttons">
+                                    <button class="chart-mode-btn active" id="realtimeToggle">实时</button>
+                                    <button class="chart-mode-btn" id="tenMinuteToggle">10分钟</button>
+                                    <button class="chart-mode-btn" id="hourlyToggle">1小时</button>
+                                </div>
+                                <button class="wake-lock-btn" id="wakeLockToggle">
+                                    <span class="wake-icon">🌙</span>
+                                    <span class="wake-text">常亮</span>
+                                </button>
+                            </div>
+                        </div>
+                        <canvas id="powerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间列 - 3D视图和充电桩状态 -->
+            <div class="middle-column">
+                <!-- 3D充电站可视化区域 -->
+                <div class="reallyvison-card">
+                    <div class="reallyvison-header">
+                        <h3>3D充电站可视化</h3>
+                        <div class="toggle-buttons">
+                            <div id="rotationToggle" class="rotation-toggle" title="切换方向">
+                                <span class="toggle-text">竖屏</span>
+                            </div>
+                            <div id="layoutToggle" class="layout-toggle" title="切换简洁模式">
+                                <span class="toggle-text">简洁</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reallyvison" id="reallyvison">
+                        <!-- 粒子呼吸光效系统 -->
+                        <div class="particle-system" id="particleSystem">
+                            <!-- 呼吸光环 -->
+                            <div class="breathing-glow"></div>
+                            <!-- 能量波纹 -->
+                            <div class="energy-ripple"></div>
+                            <div class="energy-ripple"></div>
+                            <div class="energy-ripple"></div>
+                            <!-- 粒子将通过JavaScript动态生成 -->
+                        </div>
+                        
+                        <!-- 普通线材 - 端口1,2,3 -->
+                        <img src="putong.png" alt="普通线材" class="cable-putong cable-port-0" style="display: none;" />
+                        <img src="putong.png" alt="普通线材" class="cable-putong cable-port-1" style="display: none;" />
+                        <img src="putong.png" alt="普通线材" class="cable-putong cable-port-2" style="display: none;" />
+                        
+                        <!-- 细雳线材 40Gbps - 端口1,2,3 -->
+                        <img src="xili.png" alt="细雳线材" class="cable-xili cable-port-0" style="display: none;" />
+                        <img src="xili.png" alt="细雳线材" class="cable-xili cable-port-1" style="display: none;" />
+                        <img src="xili.png" alt="细雳线材" class="cable-xili cable-port-2" style="display: none;" />
+                        
+                        <!-- 细雳线材 80Gbps - 端口1,2,3 -->
+                        <img src="xili2.png" alt="细雳线材2" class="cable-xili2 cable-port-0" style="display: none;" />
+                        <img src="xili2.png" alt="细雳线材2" class="cable-xili2 cable-port-1" style="display: none;" />
+                        <img src="xili2.png" alt="细雳线材2" class="cable-xili2 cable-port-2" style="display: none;" />
+                        
+                        <!-- 云朵线材 - 端口1,2,3 -->
+                        <img src="yunduo.png" alt="云朵线材" class="cable-yunduo cable-port-0" style="display: none;" />
+                        <img src="yunduo.png" alt="云朵线材" class="cable-yunduo cable-port-1" style="display: none;" />
+                        <img src="yunduo.png" alt="云朵线材" class="cable-yunduo cable-port-2" style="display: none;" />
+                        
+                        <!-- ok线材 - 端口1,2,3 -->
+                        <img src="okokok.png" alt="ok线材" class="cable-okokok cable-port-0" style="display: none;" />
+                        <img src="okokok.png" alt="ok线材" class="cable-okokok cable-port-1" style="display: none;" />
+                        <img src="okokok.png" alt="ok线材" class="cable-okokok cable-port-2" style="display: none;" />
+                        
+                        <!-- 魅族卷卷线材 - 端口1,2,3 -->
+                        <img src="meizup.png" alt="魅族卷卷线" class="cable-meizu cable-port-0" style="display: none;" />
+                        <img src="meizup.png" alt="魅族卷卷线" class="cable-meizu cable-port-1" style="display: none;" />
+                        <img src="meizup.png" alt="魅族卷卷线" class="cable-meizu cable-port-2" style="display: none;" />
+                        
+                        <!-- 苹果官方线材 - 端口1,2,3 -->
+                        <img src="pingguox.png" alt="苹果官方线" class="cable-apple cable-port-0" style="display: none;" />
+                        <img src="pingguox.png" alt="苹果官方线" class="cable-apple cable-port-1" style="display: none;" />
+                        <img src="pingguox.png" alt="苹果官方线" class="cable-apple cable-port-2" style="display: none;" />
+                        
+                        <!-- 酷态科线材 - 端口1,2,3 -->
+                        <img src="kutaike.png" alt="酷态科线" class="cable-kutaike cable-port-0" style="display: none;" />
+                        <img src="kutaike.png" alt="酷态科线" class="cable-kutaike cable-port-1" style="display: none;" />
+                        <img src="kutaike.png" alt="酷态科线" class="cable-kutaike cable-port-2" style="display: none;" />
+                        
+                        <!-- 花线线材 - 端口1,2,3 -->
+                        <img src="huaxian.png" alt="花线" class="cable-huaxian cable-port-0" style="display: none;" />
+                        <img src="huaxian.png" alt="花线" class="cable-huaxian cable-port-1" style="display: none;" />
+                        <img src="huaxian.png" alt="花线" class="cable-huaxian cable-port-2" style="display: none;" />
+                        
+                        <!-- 端口4线材 - 在背景图下方 -->
+                        <img src="landput.png" alt="端口4普通线" class="cable-land-putong cable-port-3" style="display: none;" />
+                        <img src="landyunduo.png" alt="端口4云朵线" class="cable-land-yunduo cable-port-3" style="display: none;" />
+                        <img src="landxili2.png" alt="端口4犀利线" class="cable-land-xili2 cable-port-3" style="display: none;" />
+                        <img src="landokokok.png" alt="端口4ok线" class="cable-land-okokok cable-port-3" style="display: none;" />
+                        <img src="meizup.png" alt="端口4魅族卷卷线" class="cable-land-meizu cable-port-3" style="display: none;" />
+                        <img src="landpingguo.png" alt="端口4苹果官方线" class="cable-land-apple cable-port-3" style="display: none;" />
+                        <img src="landkutaik.png" alt="端口4酷态科线" class="cable-land-kutaike cable-port-3" style="display: none;" />
+                        <img src="landhuaxian.png" alt="端口4花线" class="cable-land-huaxian cable-port-3" style="display: none;" />
+                        
+                        <!-- 端口0 USB检测 -->
+                        <img src="000usb.png" alt="USB设备" class="cable-usb cable-port-usb" style="display: none;" />
+                        
+                        <!-- 充电状态指示图层 - 在背景图上方 -->
+                        <div class="charging-indicator charging-port-0" id="charging-indicator-0"></div>
+                        <div class="charging-indicator charging-port-1" id="charging-indicator-1"></div>
+                        <div class="charging-indicator charging-port-2" id="charging-indicator-2"></div>
+                        <div class="charging-indicator charging-port-3" id="charging-indicator-3"></div>
+                        <div class="charging-indicator charging-port-4" id="charging-indicator-4"></div>
+                        
+                        <!-- 电力信息显示 -->
+                        <div class="power-info power-info-0" id="power-info-0" style="display: none;"></div>
+                        <div class="power-info power-info-1" id="power-info-1" style="display: none;"></div>
+                        <div class="power-info power-info-2" id="power-info-2" style="display: none;"></div>
+                        <div class="power-info power-info-3" id="power-info-3" style="display: none;"></div>
+                        <div class="power-info power-info-4" id="power-info-4" style="display: none;"></div>
+                    </div>
+                    
+                    <!-- 简洁模式下的实时数据显示 - 在3D可视化卡片内但不跟随旋转 -->
+                    <div class="compact-metrics" id="compactMetrics" style="display: none;">
+                        <div class="compact-metric">
+                            <span class="compact-label">功率</span>
+                            <span class="compact-value" id="compactPower">-- W</span>
+                        </div>
+                        <div class="compact-metric">
+                            <span class="compact-label">电压</span>
+                            <span class="compact-value" id="compactVoltage">-- V</span>
+                        </div>
+                        <div class="compact-metric">
+                            <span class="compact-label">电流</span>
+                            <span class="compact-value" id="compactCurrent">-- A</span>
+                        </div>
+                        <div class="compact-metric">
+                            <span class="compact-label">蓝牙</span>
+                            <span class="compact-value" id="compactWifi">-- dBm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电桩状态 -->
+                <div class="status-section">
+                    <div class="status-card">
+                        <h3>充电桩状态</h3>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-icon">🔋</div>
+                                <div class="status-content">
+                                    <span class="status-label">总电压</span>
+                                    <span class="status-value" id="voltageValue">-- V</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">⚡</div>
+                                <div class="status-content">
+                                    <span class="status-label">总电流</span>
+                                    <span class="status-value" id="currentValue">-- A</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">📶</div>
+                                <div class="status-content">
+                                    <span class="status-label">蓝牙信号</span>
+                                    <span class="status-value" id="temperatureValue">-- dBm</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">🏃</div>
+                                <div class="status-content">
+                                    <span class="status-label">充电状态</span>
+                                    <span class="status-value" id="chargingStatus">待机</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">🔌</div>
+                                <div class="status-content">
+                                    <span class="status-label">活跃端口</span>
+                                    <span class="status-value" id="totalTime">0 个</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">💾</div>
+                                <div class="status-content">
+                                    <span class="status-label">系统内存</span>
+                                    <span class="status-value" id="totalEnergy">0 KB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧列 - 端口详情 -->
+            <div class="right-panel">
+                <div class="ports-section">
+                    <div class="ports-header">
+                        <h3>端口详情</h3>
+                        <button class="refresh-btn" id="refreshBtn">
+                            <span class="refresh-icon">🔄</span>
+                            刷新
+                        </button>
+                    </div>
+                    <div class="ports-container" id="portsContainer">
+                        <!-- 端口详情将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+    <!-- 设备控制面板模态框 -->
+    <div class="modal-overlay" id="controlModal">
+        <div class="control-panel">
+            <div class="panel-header">
+                <div class="panel-title-wrapper">
+                    <div class="panel-icon">⚙️</div>
+                    <h2>设备控制中心</h2>
+                </div>
+                <button class="close-btn" id="closeModal">✕</button>
+            </div>
+            <div class="panel-content">
+                <!-- 蓝牙扫描 - 全新设计 -->
+                <div class="control-group modern-group">
+                    <div class="group-header-modern">
+                        <div class="header-left">
+                            <span class="group-icon">📡</span>
+                            <h3>设备连接</h3>
+                        </div>
+                        <button class="scan-btn-modern" id="scanBtn">
+                            <span class="btn-icon">🔍</span>
+                            <span class="btn-text">扫描设备</span>
+                            <span class="btn-badge">5s</span>
+                        </button>
+                    </div>
+                    <div class="device-list-container-modern">
+                        <ul class="device-list" id="deviceList">
+                            <li class="device-item empty">
+                                <span class="empty-icon">📱</span>
+                                <span class="empty-text">点击扫描按钮查找设备</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <button class="disconnect-btn-modern" id="disconnectBtn" style="display: none;">
+                        <span class="btn-icon">🔌</span>
+                        <span class="btn-text">断开连接</span>
+                    </button>
+                </div>
+
+                <!-- Token管理 - 现代化设计 -->
+                <div class="control-group modern-group">
+                    <div class="group-header-modern">
+                        <div class="header-left">
+                            <span class="group-icon">🔑</span>
+                            <h3>Token 管理</h3>
+                        </div>
+                    </div>
+                    <div class="button-grid-modern">
+                        <button class="modern-btn btn-warning-modern" id="bruteforceBtn">
+                            <span class="btn-icon-large">🔍</span>
+                            <span class="btn-text-large">暴力破解</span>
+                            <span class="btn-hint">自动获取</span>
+                        </button>
+                        <button class="modern-btn btn-secondary-modern" id="reconnectBtn">
+                            <span class="btn-icon-large">🔄</span>
+                            <span class="btn-text-large">重新连接</span>
+                            <span class="btn-hint">刷新状态</span>
+                        </button>
+                    </div>
+                    <div class="token-input-wrapper">
+                        <div class="input-with-label">
+                            <label class="input-label">
+                                <span class="label-icon">🎯</span>
+                                <span class="label-text">手动输入Token</span>
+                            </label>
+                            <div class="input-group-modern">
+                                <input type="text" class="modern-input" id="tokenInput" placeholder="输入Token (如: 128 或 0x80)">
+                                <button class="save-btn-modern" id="saveTokenBtn">
+                                    <span class="btn-icon">💾</span>
+                                    <span>保存</span>
+                                </button>
+                            </div>
+                            <div class="input-hint">
+                                💡 支持十进制 (0-255) 或十六进制 (0x00-0xFF)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 端口开关控制 - 现代化 -->
+                <div class="control-group modern-group">
+                    <div class="group-header-modern">
+                        <div class="header-left">
+                            <span class="group-icon">🔌</span>
+                            <h3>端口开关</h3>
+                        </div>
+                        <button class="scan-btn-modern" style="padding: 4px 10px; font-size: 11px;" onclick="monitor.updateControlPanelStatus()">
+                            <span class="btn-icon">🔄</span>
+                            <span class="btn-text">刷新</span>
+                        </button>
+                    </div>
+                    <div class="port-switches modern-switches" id="portSwitches">
+                        <!-- 动态生成端口开关 -->
+                    </div>
+                </div>
+
+                <!-- 设备管理 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>📱 设备管理</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="action-grid">
+                            <button class="action-btn" onclick="monitor.sendAction('get_device_info')">获取设备信息</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_device_model')">设备型号</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_device_serial')">序列号</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_ap_version')">固件版本</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_ble_addr')">BLE地址</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_device_uptime')">运行时间</button>
+                            <button class="action-btn btn-danger" onclick="monitor.sendAction('reboot_device')">重启设备</button>
+                            <button class="action-btn btn-danger" onclick="monitor.sendAction('reset_device')">恢复出厂</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WiFi 管理 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>📶 WiFi 管理</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="action-grid">
+                            <button class="action-btn" onclick="monitor.sendAction('get_wifi_status')">WiFi状态</button>
+                            <button class="action-btn" onclick="monitor.sendAction('scan_wifi')">扫描WiFi</button>
+                        </div>
+                        <div class="input-row">
+                            <input type="text" id="wifiSSID" class="token-input" placeholder="SSID">
+                            <input type="password" id="wifiPass" class="token-input" placeholder="Password">
+                            <button class="action-btn btn-primary" onclick="monitor.setWifi()">设置WiFi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 显示管理 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>📺 显示管理</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="slider-row">
+                            <label>亮度</label>
+                            <input type="range" min="0" max="100" value="50" class="brightness-slider" onchange="monitor.sendAction('set_display_brightness', {brightness: parseInt(this.value)})">
+                        </div>
+                        <div class="input-row">
+                            <select id="displayMode" class="token-input" onchange="monitor.sendAction('set_display_mode', {mode: parseInt(this.value)})">
+                                <option value="0">默认模式</option>
+                                <option value="1">简洁模式</option>
+                                <option value="2">详细模式</option>
+                                <option value="3">自定义模式</option>
+                            </select>
+                            <button class="action-btn" onclick="monitor.sendAction('flip_display')">翻转显示</button>
+                        </div>
+                        <button class="action-btn" onclick="monitor.sendAction('get_display_settings')">获取显示设置</button>
+                    </div>
+                </div>
+
+                <!-- 策略配置 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>🔋 策略配置</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <!-- Power Allocation Strategy -->
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 12px; color: #aaa; display: block; margin-bottom: 6px;">功率分配模式</label>
+                            <div class="input-row">
+                                <select id="chargingStrategy" class="token-input" onchange="monitor.sendAction('set_charging_strategy', {strategy: parseInt(this.value)})">
+                                    <option value="0">自动分配 (Auto)</option>
+                                    <option value="1">固定分配 (Fixed)</option>
+                                    <option value="2">优先级分配 (Priority)</option>
+                                </select>
+                                <button class="action-btn" onclick="monitor.sendAction('get_charging_strategy')">查询</button>
+                            </div>
+                        </div>
+
+                        <!-- Temperature Mode Toggle -->
+                        <div class="strategy-toggle-container">
+                            <span class="strategy-toggle-label">温控优先模式</span>
+                            <label class="strategy-toggle">
+                                <input type="checkbox" id="tempModeToggle" onchange="monitor.sendAction('set_temperature_mode', {mode: this.checked ? 1 : 0})">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-info" id="tempModeInfo">关闭: 功率优先 | 开启: 温控优先</div>
+                    </div>
+                </div>
+
+                <!-- 端口配置 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>🔌 端口高级配置</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="input-row">
+                            <select id="configPortId" class="token-input">
+                                <option value="0">端口 1</option>
+                                <option value="1">端口 2</option>
+                                <option value="2">端口 3</option>
+                                <option value="3">端口 4</option>
+                                <option value="4">端口 5</option>
+                            </select>
+                            <button class="action-btn" onclick="monitor.sendAction('get_port_config', {port_id: parseInt(document.getElementById('configPortId').value)})">获取配置</button>
+                        </div>
+                        <div class="protocol-grid" id="protocolCheckboxes">
+                            <!-- Protocols generated by JS -->
+                        </div>
+                        <div class="input-row">
+                            <button class="action-btn btn-primary" onclick="monitor.setPortConfig()">保存配置</button>
+                        </div>
+                        <div class="input-row" style="margin-top: 10px;">
+                            <input type="number" id="portPriority" class="token-input" placeholder="优先级 (0-255)">
+                            <button class="action-btn" onclick="monitor.setPortPriority()">设置优先级</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 高级功能 -->
+                <div class="control-group collapsible">
+                    <div class="group-header" onclick="this.parentElement.classList.toggle('active')">
+                        <h3>🛠️ 高级功能</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="action-grid">
+                            <button class="action-btn" onclick="monitor.sendAction('get_port_pd_status', {port_id: parseInt(document.getElementById('configPortId').value)})">端口PD状态</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_power_historical_stats')">功率曲线</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_port_temperature', {port_id: parseInt(document.getElementById('configPortId').value)})">温度信息</button>
+                            <button class="action-btn" onclick="monitor.sendAction('ble_echo_test', {data: 'test'})">BLE回显测试</button>
+                            <button class="action-btn" onclick="monitor.sendAction('get_debug_log')">调试日志</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 信息显示区域 -->
+                <div class="control-group">
+                    <h3>信息反馈</h3>
+                    <div id="infoDisplay" class="info-display-area" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; min-height: 60px; max-height: 200px; overflow-y: auto; white-space: pre-wrap;">
+                        等待操作...
+                    </div>
+                </div>
+
+
+                <!-- 系统控制 -->
+                <div class="control-group">
+                    <h3>系统操作</h3>
+                    <div class="token-row">
+                        <button class="action-btn btn-danger" id="rebootBtn">重启设备</button>
+                        <button class="action-btn btn-primary" id="refreshInfoBtn">刷新信息</button>
+                    </div>
+                </div>
+
+                <!-- 操作日志 -->
+                <div class="control-group">
+                    <h3>操作日志</h3>
+                    <div class="status-log" id="actionLog">
+                        <div class="log-entry">准备就绪...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用功能反馈弹窗 -->
+    <div class="modal-overlay" id="featureModal">
+        <div class="control-panel feature-panel">
+            <div class="panel-header">
+                <div class="panel-title-wrapper">
+                    <div class="panel-icon" id="featureIcon">📊</div>
+                    <h2 id="featureTitle">功能详情</h2>
+                </div>
+                <button class="close-btn" id="closeFeatureModal">✕</button>
+            </div>
+            <div class="panel-content" id="featureContent">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="cable-config.js?v=2"></script>
+    <script src="cable-manager.js?v=2"></script>
+    <script src="script.js?v=3"></script>
+</body>
+</html>
