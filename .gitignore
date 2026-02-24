@@ -149,12 +149,35 @@ temp/
 # Unrelated Projects (无关项目)
 # ============================================
 wwr-mygame-gift/
+software/codefather-proxy/
 
 # ============================================
 # Temporary Scripts (临时脚本)
 # ============================================
 docs/*.js
 docs/gift.py
+
+# ============================================
+# Private Files - Not for Public Distribution
+# ============================================
+# Private markdown documents
+docs/快速使用指南.md
+docs/多账号管理指南.md
+docs/README_快手摇钱树.md
+docs/guides/使用指南.md
+docs/guides/ASCRIPT_IOS_COMPLETE_API.md
+# Third-party automation scripts (not part of this project)
+docs/ios.py
+docs/ios_test.py
+docs/run*.sh
+docs/run-account1.sh
+docs/run-account2.sh
+docs/run-both-accounts.sh
+# Node package files unrelated to this project
+docs/package.json
+docs/package-lock.json
+# Junk / unnamed media
+docs/pic/________.jpeg
 
 # ============================================
 # Database Files
@@ -170,6 +193,13 @@ docs/gift.py
 .claude/
 .cursor/
 .codebuddy/
+.spec-workflow/
+.kiro/
+
+# ============================================
+# Internal Planning Documents (内部规划文档)
+# ============================================
+plans/
 
 # ============================================
 # PlatformIO Build Artifacts
